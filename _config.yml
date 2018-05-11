@@ -5,7 +5,7 @@ header-img: img/home-bg.jpg
 email: 1271087623@qq.com
 description: "关于个人成长历程、ROS设计 | Carl Zhang，About personal growth, ROS designer. | 这里是 @Playfish 的个人博客，与你一起发现更大的世界。"
 keyword: "张世伟, CarlZHang, Playfish, @Playfish, 张世伟的博客, ROS, 博客, 个人网站"
-url: "https://Playfish.github.io"              # your host, for absolute URL
+url: "https://carlzhang.me"              # your host, for absolute URL
 baseurl: ""                             # for example, '/blog' if your blog hosted on 'host/blog'
 
 
@@ -60,8 +60,8 @@ netease_comment: false
 # ba_track_id: [your track id]
 
 # Google Analytics
-ga_track_id: 'UA-49627206-1'            # Format: UA-xxxxxx-xx
-ga_domain: huangxuan.me
+ga_track_id: 'UA-49627226-3'            # Format: UA-xxxxxx-xx
+ga_domain: carlzhang.me
 
 
 
