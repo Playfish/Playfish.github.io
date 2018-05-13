@@ -48,7 +48,7 @@ kramdown:
 
 
 # Disqus settings
-disqus_username: hux
+disqus_username: playfish
 
 # Netease setttings
 netease_comment: false
@@ -61,7 +61,7 @@ netease_comment: false
 
 # Google Analytics
 ga_track_id: 'UA-49627226-3'            # Format: UA-xxxxxx-xx
-ga_domain: carlzhang.me
+ga_domain: carlzhang.playfish
 
 
 
