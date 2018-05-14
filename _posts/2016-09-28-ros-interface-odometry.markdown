@@ -1,176 +1,128 @@
 ---
 layout:     post
-title:      "【ROS总结】ROS故障排除"
-subtitle:   "ROS usage troubleshooting"
-date:       2017-06-03 15:17:12
+title:      "【ROS总结】 ROS接口——Odometry"
+subtitle:   "ROS interface odometry"
+date:       2016-09-28 11:23:57
 author:     "Playfish"
 header-img: "img/in-post/release-ros1-into-rosdistro/ros_logo.jpg"
 header-mask: 0.3
 catalog:    true
 tags:
     - ROS1
-    - Troubleshooting
+    - ros_control
+    - Odometry
 ---
 
 
 > 说明:<br><br>
-> 本文首发于 [CSDN](https://blog.csdn.net/u011118482/article/details/72852251)，转载请保留链接。
+> 本文首发于 [CSDN](https://blog.csdn.net/u011118482/article/details/52688982)，转载请保留链接。
 
 ## 前言
 
-在ROS学习与开发中，难免遇到各种各样的问题，除了一些可以解决问题（语法问题）外，其他一些问题有时很难发现并解决，在这里，总结下在开发中遇到的各种问题，不定期更新中。。。
+版本：Indigo
 
-为了方便和管理，每一个标题都是一些问题模块，现在有catkin_make编译模块。
+  这篇文章主要是把平时用到的一些ROS接口梳理一下，避免无法和ros进行对接，首先ROS中相对重要的是里程计（Odometry），里程计的重要性不言而喻，如果没有里程计，不管是建立地图还是导航都不会很好的工作，相应的Odometry更新也有一些节点可以调用，本文主要用到的是[ros_controllers中的差分驱动控制器][1]，[介绍文档如下][2]，该控制器用处广泛，基本差分驱动都可以用到，从底层得到左右电机编码器数据，通过机器人运动学转换成Odometry消息发送出去，其他节点得到Odometry消息就可以在rviz或者Gazebo中更新机器人位置信息，也可以加上imu数据让机器人更准确。
 
-## catkin_make问题
-
-**问题1**：在使用catkin_make过程中，明明有需要编译的包，但是系统提示找不到该路径，具体输出如下：
-```
-Traceback (most recent call last):
-  File "/opt/ros/indigo/share/genjava/cmake/../../../lib/genjava/genjava_gradle_project.py", line 14, in <module>
-    genjava.main(sys.argv)
-  File "/opt/ros/indigo/lib/python2.7/dist-packages/genjava/genjava_main.py", line 82, in main
-    gradle_project.create(args.package, args.output_dir)
-  File "/opt/ros/indigo/lib/python2.7/dist-packages/genjava/gradle_project.py", line 152, in create
-    raise IOError("could not find %s on the ros package path" % msg_pkg_name)
-IOError: could not find turtlebot2i_marker_manipulation on the ros package path
-make[2]: *** [turtlebot2i_marker_manipulation/java/turtlebot2i_marker_manipulation/build.gradle] Error 1
-make[1]: *** [turtlebot2i_marker_manipulation/CMakeFiles/turtlebot2i_marker_manipulation_generate_messages_java_gradle.dir/all] Error 2
-make[1]: *** Waiting for unfinished jobs....
-Traceback (most recent call last):
-  File "/opt/ros/indigo/share/genjava/cmake/../../../lib/genjava/genjava_gradle_project.py", line 14, in <module>
-    genjava.main(sys.argv)
-  File "/opt/ros/indigo/lib/python2.7/dist-packages/genjava/genjava_main.py", line 82, in main
-    gradle_project.create(args.package, args.output_dir)
-  File "/opt/ros/indigo/lib/python2.7/dist-packages/genjava/gradle_project.py", line 152, in create
-    raise IOError("could not find %s on the ros package path" % msg_pkg_name)
-IOError: could not find turtlebot2i_marker_manipulation on the ros package path
+## ros_controllers
+安装方法为：
 
 ```
-
-IOError: <span style="color:red;"> could not find </span> turtlebot2i_marker_manipulation <span style="color:red;">on the ros package path. </span>
-
-**解决方案：**
-下载genjava就可以正常编译。原因不明。命令如下：
-```
-$ sudo apt-get remove ros-indigo-genjava 
+$ sudo apt-get install ros-indigo-ros-controllers
 ```
 
-## Moveit! 问题
-**问题1：** 当运行
-```
-roslaunch moveit_setup_assistant setup_assistant.launch
-```
-
-选择模型加载时，会突然系统崩溃。提示如下信息：
-```
-[rospack] Error: no package given
-[librospack]: error while executing command
-[ INFO] [1496720764.674712823]: Running 'rosrun xacro xacro.py /home/carl/Desktop/Project/turtlebot2i/src/turtlebot2i/turtlebot2i_description/robots/kobuki_interbotix_zr300.urdf.xacro'...
-[ INFO] [1496720765.546447152]: Loaded turtlebot robot model.
-[ INFO] [1496720765.546519891]: Setting Param Server with Robot Description
-[ INFO] [1496720765.555161202]: Robot semantic model successfully loaded.
-[ INFO] [1496720765.555195476]: Setting Param Server with Robot Semantic Description
-[ INFO] [1496720765.570819680]: Loading robot model 'turtlebot'...
-[ INFO] [1496720765.570888991]: No root/virtual joint specified in SRDF. Assuming fixed joint
-================================================================================REQUIRED process [moveit_setup_assistant-1] has died!
-process has died [pid 8123, exit code -11, cmd /opt/ros/indigo/lib/moveit_setup_assistant/moveit_setup_assistant __name:=moveit_setup_assistant __log:=/home/carl/.ros/log/689c9c26-4a64-11e7-8883-d85de2b5c407/moveit_setup_assistant-1.log].
-log file: /home/carl/.ros/log/689c9c26-4a64-11e7-8883-d85de2b5c407/moveit_setup_assistant-1*.log
-Initiating shutdown!
-================================================================================
-[moveit_setup_assistant-1] killing on exit
-shutting down processing monitor...
-... shutting down processing monitor complete
-done
-```
-
-说明：
-
- 1. 单独加载模型没问题.
-
- 2. 使用moveit_setup加载其他模型有的没问题（例如，Turtlebot）。
-
- 3. 只是使用有些模型会出现突然崩溃的情况。
-
-**解决方案：**
-
-**方式1：**检查模型中模型的<collision>属性，里面的<geometry>是否加载的是.dae或.stl文件，如果有，将.dae或.stl替换成urdf本身自有的属性，例如<cylinder>，<box>等。
-举例：将
+本文并没有直接使用Odometry消息，而是通过ros_controls中的[hardware_interface][3]来更新Odometry。相应教程说明如下，[链接地址][4]。直接更新hardware_interface中的joint就可以更新Odometry。在本地声明一个类为myrobot，继承于hardware_interface::RobotHw。
 
 ```
-      <collision>
-        <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
-        <geometry>
-          <mesh filename="package://turtlebot2i_description/meshes/sensors/sr300.stl" scale="2.0 2.0 2.0" />
-        </geometry>
-      </collision>
+#include <hardware_interface/joint_command_interface.h>//关节命令接口，用于接收/cmd_vel数据
+#include <hardware_interface/joint_state_interface.h>//关节状态接口，用于更新Odometry
+#include <hardware_interface/robot_hw.h>
+
+class MyRobot : public hardware_interface::RobotHW
+{
+public:
+  MyRobot() 
+ { 
+   // connect and register the joint state interface
+   hardware_interface::JointStateHandle state_handle_a("A", &pos[0], &vel[0], &eff[0]);
+   jnt_state_interface.registerHandle(state_handle_a);
+
+   hardware_interface::JointStateHandle state_handle_b("B", &pos[1], &vel[1], &eff[1]);
+   jnt_state_interface.registerHandle(state_handle_b);
+
+   registerInterface(&jnt_state_interface);
+
+   // connect and register the joint position interface
+   hardware_interface::JointHandle pos_handle_a(jnt_state_interface.getHandle("A"), &cmd[0]);
+   jnt_pos_interface.registerHandle(pos_handle_a);
+
+   hardware_interface::JointHandle pos_handle_b(jnt_state_interface.getHandle("B"), &cmd[1]);
+   jnt_pos_interface.registerHandle(pos_handle_b);
+
+   registerInterface(&jnt_pos_interface);
+  }
+
+private:
+  hardware_interface::JointStateInterface jnt_state_interface;
+  hardware_interface::PositionJointInterface jnt_pos_interface;
+  double cmd[2];
+  double pos[2];
+  double vel[2];
+  double eff[2];
+};
 ```
 
-替换成
+其中"A"为机器人模型中的关节，一般为wheel_left。同理“B"也是轮子关节，一般为wheel_right。pos为当前机器人的位置，vel为机器人目前速度，eff为初始状态时机器人位置，cmd为接收cmd_vel消息用于控制机器人运动。需要注意的是pos为轮子所走过的弧度，因此上传时需要上传弧度值。
+
+[Odometry.cpp][5]文件中更新Odometry的代码为：
 ```
-      <collision>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <geometry>
-          <cylinder length="0.006" radius="0.170"/>
-        </geometry>
-      </collision>
-```
+ bool Odometry::update(double left_pos, double right_pos, const ros::Time &time)
+  {
+    /// Get current wheel joint positions:
+    const double left_wheel_cur_pos  = left_pos  * wheel_radius_;
+    const double right_wheel_cur_pos = right_pos * wheel_radius_;
 
-**方式2：**测试了下moveit_setup_assistant，发现模型加载mesh时，会出错，方式1是将现有属性替换，另外一种方式是改变自己制作的dae或stl文件名，不清楚什么原因，moveit_setup_assistant加载dae或stl时，模型名必须为小写，如果有大写出现就会报错，例如将Test_Finger.dae修改为test_finger.dae就不会造成崩溃。
+    /// Estimate velocity of wheels using old and current position:
+    const double left_wheel_est_vel  = left_wheel_cur_pos  - left_wheel_old_pos_;
+    const double right_wheel_est_vel = right_wheel_cur_pos - right_wheel_old_pos_;
 
-**方式3：**如果是在加载别人做的dae或stl文件时，需要将dae或stl文件重写，我使用的是blender，将stl重新导出stl就不会造成崩溃。其他3D建模也可以尝试下，3D Max，solidworks，inventor等等。
+    /// Update old position with current:
+    left_wheel_old_pos_  = left_wheel_cur_pos;
+    right_wheel_old_pos_ = right_wheel_cur_pos;
 
-其他解决方案如果有请告知。
+    /// Compute linear and angular diff:
+    const double linear  = (right_wheel_est_vel + left_wheel_est_vel) * 0.5 ;
+    const double angular = (right_wheel_est_vel - left_wheel_est_vel) / wheel_separation_;
 
-## ROS_Control + Gazebo问题
-**问题1：**使用ros_control为模型添加Gazebo接口时，模型单独显示没有问题，在Gazebo中添加会错误，从而导致加载不了ros_control接口，报错如下：
+    /// Integrate odometry:
+    integrate_fun_(linear, angular);
 
-```
-[ERROR] [1497406213.064550049, 0.172000000]: No valid hardware interface element found in joint 'wheel_joint_fl'.
-[ERROR] [1497406213.064681421, 0.172000000]: Failed to load joints for transmission 'wheel_trans_fl'.
-[ERROR] [1497406213.064711210, 0.172000000]: No valid hardware interface element found in joint 'caster_joint_fl'.
-[ERROR] [1497406213.064765673, 0.172000000]: Failed to load joints for transmission 'caster_trans_fl'.
-[ERROR] [1497406213.064781965, 0.172000000]: No valid hardware interface element found in joint 'wheel_joint_fr'.
-[ERROR] [1497406213.064794358, 0.172000000]: Failed to load joints for transmission 'wheel_trans_fr'.
-[ERROR] [1497406213.064806668, 0.172000000]: No valid hardware interface element found in joint 'caster_joint_fr'.
-[ERROR] [1497406213.064815775, 0.172000000]: Failed to load joints for transmission 'caster_trans_fr'.
-[ERROR] [1497406213.064826099, 0.172000000]: No valid hardware interface element found in joint 'wheel_joint_bl'.
-[ERROR] [1497406213.064837826, 0.172000000]: Failed to load joints for transmission 'wheel_trans_bl'.
-[ERROR] [1497406213.064850074, 0.172000000]: No valid hardware interface element found in joint 'caster_joint_bl'.
-[ERROR] [1497406213.064861368, 0.172000000]: Failed to load joints for transmission 'caster_trans_bl'.
-[ERROR] [1497406213.064874445, 0.172000000]: No valid hardware interface element found in joint 'wheel_joint_br'.
-[ERROR] [1497406213.064884656, 0.172000000]: Failed to load joints for transmission 'wheel_trans_br'.
-[ERROR] [1497406213.064893785, 0.172000000]: No valid hardware interface element found in joint 'caster_joint_br'.
-[ERROR] [1497406213.064902338, 0.172000000]: Failed to load joints for transmission 'caster_trans_br'.
-[ERROR] [1497406213.064913362, 0.172000000]: No valid hardware interface element found in joint 'arm_joint_1'.
-[ERROR] [1497406213.064923217, 0.172000000]: Failed to load joints for transmission 'arm_trans_1'.
-[ERROR] [1497406213.064932655, 0.172000000]: No valid hardware interface element found in joint 'arm_joint_2'.
-[ERROR] [1497406213.064942810, 0.172000000]: Failed to load joints for transmission 'arm_trans_2'.
-[ERROR] [1497406213.064956180, 0.172000000]: No valid hardware interface element found in joint 'arm_joint_3'.
-[ERROR] [1497406213.064965970, 0.172000000]: Failed to load joints for transmission 'arm_trans_3'.
-[ERROR] [1497406213.064976051, 0.172000000]: No valid hardware interface element found in joint 'arm_joint_4'.
-[ERROR] [1497406213.064985608, 0.172000000]: Failed to load joints for transmission 'arm_trans_4'.
-[ERROR] [1497406213.064995977, 0.172000000]: No valid hardware interface element found in joint 'arm_joint_5'.
-[ERROR] [1497406213.065005730, 0.172000000]: Failed to load joints for transmission 'arm_trans_5'.
-[ERROR] [1497406213.065017694, 0.172000000]: No valid hardware interface element found in joint 'gripper_finger_joint_l'.
-[ERROR] [1497406213.065026496, 0.172000000]: Failed to load joints for transmission 'gripper_finger_l_trans'.
-[ERROR] [1497406213.065036557, 0.172000000]: No valid hardware interface element found in joint 'gripper_finger_joint_r'.
-[ERROR] [1497406213.065046327, 0.172000000]: Failed to load joints for transmission 'gripper_finger_r_trans'.
+    /// We cannot estimate the speed with very small time intervals:
+    const double dt = (time - timestamp_).toSec();
+    if (dt < 0.0001)
+      return false; // Interval too small to integrate with
 
+    timestamp_ = time;
+
+    /// Estimate speeds using a rolling mean to filter them out:
+    linear_acc_(linear/dt);
+    angular_acc_(angular/dt);
+
+    linear_ = bacc::rolling_mean(linear_acc_);
+    angular_ = bacc::rolling_mean(angular_acc_);
+
+    return true;
+  }
 ```
 
-**解决：**该问题原因是ros_control接口更新，有的旧的会不兼容，通过给<joint>选项添加<hardwareinterface>标签，这个错误会消失，比如，在rrbot.xacro文件中，改变：
+其中
+```
+const double left_wheel_cur_pos  = left_pos  * wheel_radius_;
 
 ```
-<joint name="joint1"/> 
-```
+当前的轮子所走过的弧度*轮子半径，得到当前轮子走过的距离，因此，这就是为什么pos要为弧度值。
 
-为：
-```
-<transmission name="tran1">
-  <type>transmission_interface/SimpleTransmission</type>
-  <joint name="joint1">
-    <hardwareInterface>EffortJointInterface</hardwareInterface>
-  </joint>
-</transmission>
-```
+[1]: https://github.com/ros-controls/ros_controllers/blob/indigo-devel/diff_drive_controller/src/odometry.cpp
+[2]: http://wiki.ros.org/ros_control
+[3]: http://wiki.ros.org/hardware_interface?distro=indigo
+[4]: https://github.com/ros-controls/ros_control/wiki/hardware_interface
+[5]: https://github.com/ros-controls/ros_controllers/blob/kinetic-devel/diff_drive_controller/src/odometry.cpp
