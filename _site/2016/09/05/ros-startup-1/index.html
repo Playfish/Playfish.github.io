@@ -10,7 +10,7 @@
     <meta name="keywords"  content="张世伟, CarlZHang, Playfish, @Playfish, 张世伟的博客, ROS, 博客, 个人网站">
     <meta name="theme-color" content="#000000">
     
-    <title>【ROS总结】发布ROS1包到ROS版本 - Playfish的博客 | Carl Zhang Blog</title>
+    <title>【ROS总结】Turtlebot ROS 开机自启动设置 - Playfish的博客 | Carl Zhang Blog</title>
 
     <!-- Web App Manifest -->
     <link rel="manifest" href="/pwa/manifest.json">
@@ -19,7 +19,7 @@
     <link rel="shortcut icon" href="/img/favicon.ico">
     
     <!-- Canonical URL -->
-    <link rel="canonical" href="http://localhost:4000/2018/04/22/releaseros1-into-rosdistro/">
+    <link rel="canonical" href="http://localhost:4000/2016/09/05/ros-startup-1/">
 
     <!-- Bootstrap Core CSS -->
     <link rel="stylesheet" href="/css/bootstrap.min.css">
@@ -155,13 +155,13 @@
 
     <!-- Image to hack wechat -->
 <!-- <img src="/img/icon_wechat.png" width="0" height="0"> -->
-<!-- <img src="/img/in-post/release-ros1-into-rosdistro/ros_logo.jpg" width="0" height="0"> -->
+<!-- <img src="/img/in-post/turtlebot-startup-setting-2/turtlebot2.jpeg" width="0" height="0"> -->
 
 <!-- Post Header -->
 <style type="text/css">
     header.intro-header{
         position: relative;
-        background-image: url('/img/in-post/release-ros1-into-rosdistro/ros_logo.jpg')
+        background-image: url('/img/in-post/turtlebot-startup-setting-2/turtlebot2.jpeg')
     }
 
     
@@ -183,15 +183,17 @@
                         
                         <a class="tag" href="/tags/#ROS1" title="ROS1">ROS1</a>
                         
-                        <a class="tag" href="/tags/#Release" title="Release">Release</a>
+                        <a class="tag" href="/tags/#Turtlebot2" title="Turtlebot2">Turtlebot2</a>
+                        
+                        <a class="tag" href="/tags/#Startup" title="Startup">Startup</a>
                         
                     </div>
-                    <h1>【ROS总结】发布ROS1包到ROS版本</h1>
+                    <h1>【ROS总结】Turtlebot ROS 开机自启动设置</h1>
                     
                     
-                    <h2 class="subheading">Release ROS1 package into rosdistro</h2>
+                    <h2 class="subheading">ROS startup setting 1</h2>
                     
-                    <span class="meta">Posted by Playfish on April 22, 2018</span>
+                    <span class="meta">Posted by Playfish on September 5, 2016</span>
                 </div>
             </div>
         </div>
@@ -211,188 +213,59 @@
 
 				<blockquote>
   <p>说明:<br /><br />
-本文首发于 <a href="https://blog.csdn.net/u011118482/article/details/80039148">CSDN</a>，转载请保留链接。</p>
+本文首发于 <a href="https://blog.csdn.net/u011118482/article/details/52437927">CSDN</a>，转载请保留链接。</p>
 </blockquote>
 
 <h2 id="前言">前言</h2>
-<p>在ROS开发过程中，想要发布自己的包贡献到ROS社区，也就是想要自己的包可以通过apt-get的形式进行下载，这样可以避免每次源码编译的时候会遇到很多坑的情况，不过想要发布ROS包到ROS社区需要如下能力：</p>
 
-<ul>
-  <li>长期维护能力：ROS包会一直迭代更新，因此自己的包也应具有长期维护能力，当然，稳定版本后可以不用长期维护。</li>
-  <li>开源精神：因为ROS包遵循BSD协议，会要求将包开源后才可以上传到ROS社区，所以将自己的包发布到ROS社区，最好有开源精神。</li>
-  <li>文档更新：包的更新也伴随这文档更新，当然也不是绝对的，不过最好有包的使用文档，也就是wiki上。</li>
-</ul>
+<p>关于ROS自启动设置，之前查看了很多相关文章，并不是很适用，尤其是开机启动时候加载minimal.launch和amcl.launch的时候，目前开启自启动的ROS包有<a href="http://docs.ros.org/jade/api/robot_upstart/html/">upstart</a>，该包是通过创建一个服务来启动minimal.launch等基本的launch文件，要是启动多个launch文件，可以通过把多个launch文件写入到一个launch中这样的方法来启动。</p>
 
-<p>如果以上的可以做到，那么，恭喜你，可以作为开源成员加入到ROS大家庭来，开源自己代码，共享社区。</p>
+<p>还有其他方式是利用Ubuntu自带的开机启动文件来达到多launch文件启动效果，一种是服务，方法和upstart类似，如果想要多launch文件分别启动，例如minimal.launch和amcl.launch两个launch文件，当启动完minimal.launch后，再启动amcl.launch会出现waiting for device…字样，导致的结果就是amcl.launch自动不了，还得重新启动。因此，把多个launch文件写入到一个launch启动就不会提示waiting for device…。</p>
 
-<p>本教程只是单纯的介绍如何发布自己的包到ROS社区，并且，发布后如何通过apt-get获取下载，关于文档界面编写，也就是wiki说明，会在后面进行说明。</p>
+<h2 id="rclocal">rc.local</h2>
 
-<p>一般发布自己ROS包有如下步骤：</p>
+<p>另外一种是在开机启动文件rc.local文件中直接写入ros命令来达到开机启动效果，把minimal和amcl两个launch文件写成一个launch命名为auto_start.launch，然后在rc.laoch中写入如下内容：</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>source /opt/ros/indigo/setup.bash
+roslaunch /etc/auto_start.launch 
+</code></pre></div></div>
+<p>其中auto_start.launch文件所在位置并不重要，需要写在exit 0的前面即可，不过这个不能启动用户目录下的配置，如果启动用户目录下的launch文件，需要source ~/.bashrc。</p>
 
-<ol>
-  <li>具有github账号与要发布的存储库地址，发布存储库(bloom-release生成的包路径)，wiki白名单(文档界面做准备)</li>
-  <li>发布前准备工作，bloom安装(ROS1推荐使用bloom-release进行一键操作)</li>
-  <li>同步到ROS社区</li>
-  <li>等待ROS社区的ROS包版本迭代</li>
-  <li>编辑wiki文档教程</li>
-</ol>
+<p>我用的方法是，把所有需要的配置和launch文件写到了一个脚本中，通过开机启动脚本来达到启动效果，不过经过测试，单独运行两个launch文件还是有错误，即运行完minimal后运行amcl.launch的时候，会卡在waiting for device…。目前解决方法是把minimal和amcl写到了一个文件中命名为minimal_amcl.launch。</p>
 
-<p>以上步骤完成后，就可以进行apt-get形式下载自己的包了。假如自己的包为cht10_node，那么可以使用如下命令进行安装：</p>
+<p>启动minimal_amcl.launch文件是在开机的第20秒左右，amcl.launch和minimal.launch共启动了两次，基本完全启动差不多是一到两分钟左右。目前不知道是什么原因，如果有知道的请告知，谢谢！</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>sudo apt-get install ros-&lt;rosdistro&gt;-cht10-node 
+<p>首先，在家目录下创建一个名为aotu_runing的目录，在该目录下创建脚本文件minimal，内容如下：</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;pre name="code" class="plain"&gt;#!/bin/bash
+source /opt/ros/indigo/setup.bash
+source ~/.bashrc
+export TURTLEBOT_BASE=kobuki
+export TURTLEBOT_3D_SENSOR=kinect
+export TURTLEBOT_MAP_FILE=&lt;path_of_map_file&gt;
+source ~/catkin_ws/devel/setup.bash
+export ROS_HOSTNAME=10.42.0.1
+export ROS_MASTER_URI=http://10.42.0.1:11311
+d='data +%Y%m%d-%H:%M:%S'
+echo "[$d]:minimal runing" &gt;&gt; ~/print_log.txt
+roslaunch turtlebot_bringup minimal_amcl.launch
 </code></pre></div></div>
 
-<p>其中将<rosdistro>替换成自己的ROS版本，也就是自己的包发布到的ROS版本中，比如自己的包发布到了kinetic中，那么就是：</rosdistro></p>
+<p>其中首先source ros路径，然后source bashrc和用户目录下的catkin_ws，因为catkin_ws目录下包含了路径规划算法。</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>sudo  apt-get  install ros-kinetic-cht10-node
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;pre name="code" class="plain"&gt;d='data +%Y%m%d-%H:%M:%S'
+echo "[$d]:minimal runing" &gt;&gt; ~/print_log.txt
 </code></pre></div></div>
 
-<p>注意：并不是自己把包发布到ROS社区就等于所有的ROS版本都可以下载，只有发布到对应ROS版本才可以。也就是说要想把自己的包发布到ROS所有版本，必须把自己的包发布到所有的版本中，比如Indigo、Jade、Kinetic、Luna、Melodic中。</p>
+<p>打印出信息到家目录下。</p>
 
-<p>ROS发布需要bloom-release包，我已经将ROS的bloom-release包如何使用翻译到wiki上，大家可以查看教程</p>
+<p>然后修改/etc/rc.local文件：</p>
 
-<p>http://wiki.ros.org/cn/bloom</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">#!/bin/sh -e</span>
 
-<p>或者查看英文教程：</p>
-
-<p>http://wiki.ros.org/bloom</p>
-
-<p>以后会编写如何发布ROS2的包到ROS社区教程。</p>
-
-<p>大家也可以看Mastering ROS for Robotics Programming中的Maintaining the ROS package 部分。</p>
-
-<p>Mastering ROS for Robotics Programming书籍下载：https://download.csdn.net/download/u011118482/10402380 (包含英文和中文翻译)。</p>
-
-<p>没有0积分下载，大家也可以进入ROS群进行下载。</p>
-
-<h2 id="发布前的准备">发布前的准备</h2>
-
-<h3 id="创建github存储库">创建github存储库</h3>
-
-<p>登录http://github.com/，创建自己的github账号，创建完成后，创建要发布的ROS存储库，例如包名为之前教程的cht10_node，那么创建cht10_node目录。</p>
-
-<p>我的存储库为：https://github.com/Playfish/cht10_node</p>
-
-<p><img src="/img/in-post/release-ros1-into-rosdistro/cht10_repo.png" alt="" /></p>
-
-<p>创建完成后，上传自己的代码到github的cht10_node存储库中。完成如上图。</p>
-
-<p>注意：发布ROS包应有如下内容，否则无法发布：</p>
-
-<ul>
-  <li>CHANGELOG.rst：必须有该文件，该文件内容，可以查看我写的，格式一般为包+版本(日期)+分隔符+修订日志</li>
-  <li>package.xml：内容必须有maintainer子项，版本号必须与CHANGELOG中的版本一致，比如都为0.0.1，包名也一样。</li>
-  <li>tag：版本标记。</li>
-</ul>
-
-<p>生成tag用于以下发布ROS包追踪：</p>
-
-<p>点击当前界面上的release按钮，创建一个release tag：</p>
-
-<p><img src="/img/in-post/release-ros1-into-rosdistro/cht10_release.png" alt="" /></p>
-
-<p>保存。</p>
-
-<h3 id="创建github-release存储库">创建github release存储库</h3>
-
-<p>创建要发布的ROS完成后，为ROS包创建生成的release存储库，我创建的名为cht10_node_release，最好创建为包名_release。这个存储库为空即可，必须勾选初始化ReadeMe.md选项，生成的包版本更新日志将存放在这里。
-<img src="/img/in-post/release-ros1-into-rosdistro/cht10_release_repo.png" alt="" /></p>
-
-<p>完成后即可，不用再管这个存储库，后期发布完成后，可以查看内容。</p>
-<h3 id="fork-ros社区版本包存储库">fork ROS社区版本包存储库</h3>
-
-<p>保证自己的github账号处于登录状态，点击：http://github.com/ros/rosdistro 。随后点击fork。
-<img src="/img/in-post/release-ros1-into-rosdistro/fork_rosdistro.png" alt="" /></p>
-
-<p>完成后，可以看到自己有了rosdistro存储库：
-<img src="/img/in-post/release-ros1-into-rosdistro/playfish_rosdistro.png" alt="" /></p>
-
-<h2 id="发布ros包">发布ROS包</h2>
-<p>发布前的准备完成后，在自己的Ubuntu下，安装bloom_release包，安装命令如下</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>sudo apt-get install python-bloom
+<span class="nb">cd</span> ~/aotu_runing
+./minimal
 </code></pre></div></div>
-
-<p>安装完成后，使用如下命令进行发布：</p>
-
-<p>以下配置只会在第一次产生。</p>
-
-<p>运行以下命令进行发布与配置ROS Release包，比如把cht10_node发布到kinetic版本上：</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>bloom-release --rosdistro kinetic --track kinetic cht10_node
-</code></pre></div></div>
-
-<p>其中–rosdistro后的选项为发布到kinetic版本，–track选项为追踪选项，默认为ROS分布式版本，最后的cht10_node为当前存储库名称。</p>
-
-<p>运行命令产生如下：</p>
-
-<p><img src="/img/in-post/release-ros1-into-rosdistro/release_0.png" alt="" /></p>
-
-<p>输入之前创建的发布的release存储库：https://github.com/Playfish/cht10_node_release.git</p>
-
-<p>选择Y确定创建追踪。
-<img src="/img/in-post/release-ros1-into-rosdistro/release_1.png" alt="" /></p>
-
-<p>输入当前存储库名称：cht10_node</p>
-
-<p>输入当前存储库地址：https://github.com/Playfish/cht10_node.git</p>
-
-<p>随后一路按下回车为默认选项。直到遇到输入用户名、密码为止，在此过程中会遇到很多次输入账号密码。</p>
-
-<p><img src="/img/in-post/release-ros1-into-rosdistro/release_2.png" alt="" /></p>
-
-<p>输入github账号密码，回车。
-<img src="/img/in-post/release-ros1-into-rosdistro/release_3.png" alt="" /></p>
-
-<p>产生debian配置文件：y</p>
-
-<p>输入当前github用户名密码继续。
-<img src="/img/in-post/release-ros1-into-rosdistro/release_4.png" alt="" /></p>
-
-<p>产生debian包后，输入用户名密码发布tag。
-<img src="/img/in-post/release-ros1-into-rosdistro/release_5.png" alt="" /></p>
-
-<p>编辑当前ROS包另一个配置，文档配置以及版本状态，输入默认即可。</p>
-
-<p>注意：turn on pull request testing选择默认为N，如果选择y需要额外配置，不需要打开，我这里是为以后做准备。</p>
-
-<p>额外的配置查看：https://github.com/ros/rosdistro/pull/17576</p>
-
-<p><img src="/img/in-post/release-ros1-into-rosdistro/release_6.png" alt="" /></p>
-
-<p>向rosdistro存储库的kinetic目录下的分布式文件添加当前包内容。</p>
-
-<p>随后向rosdistro存储库提交请求，输入当前github账号密码。
-<img src="/img/in-post/release-ros1-into-rosdistro/release_7.png" alt="" /></p>
-
-<p>生成请求日志。
-<img src="/img/in-post/release-ros1-into-rosdistro/release_8.png" alt="" /></p>
-
-<p>完成后，将提示已经发布完成请求，大家可以点击最后的链接查看当前请求。</p>
-<h2 id="确认工作">确认工作</h2>
-
-<p>请求完成后，大家打开之前创建的空白发布存储库，可以看到已经生成了很多生成deb包的规则文件，例如我的：</p>
-
-<p>https://github.com/Playfish/cht10_node_release.git</p>
-
-<p><img src="/img/in-post/release-ros1-into-rosdistro/cht10_release_fill.png" alt="" /></p>
-
-<p>大家可以到https://github.com/ros/rosdistro/pulls，查看发布情况。
-<img src="/img/in-post/release-ros1-into-rosdistro/report_rosdistro.png" alt="" /></p>
-
-<p>如果一切正常，ROS维护人员将合并当前请求，合并完成后。</p>
-
-<p>到 讨论论坛中https://discourse.ros.org/查看当前版本下的包迭代情况，一般为一个月ROS包版本迭代一次。</p>
-
-<p>迭代完成后，可以看到自己的包已经存放到了http://packages.ros.org下。</p>
-
-<p>使用apt-get update 更新后，可以下载自己的包了，比如我的包可以用如下命令下载：</p>
-
-<p>sudo  apt-get  install  ros-kinetic-cht10-node</p>
-
-<p>ROS包的发布过程这一节告一段落，下一步讲述如何<a href="https://blog.csdn.net/u011118482/article/details/80041201">编辑cht10_node生成的wiki文档</a>。</p>
-
-<p>注意，如果要生成wiki文档，需要在package.xml里面添加url指向wiki。</p>
+<p>配置完成，当再次开机的时候，等待1到2分钟，会听到Turtlebot响声，amcl也一起启动。</p>
 
 
 
@@ -400,18 +273,11 @@
 
                 <ul class="pager">
                     
-                    <li class="previous">
-                        <a href="/2017/11/25/write-laserscan-publisher/" data-toggle="tooltip" data-placement="top" title="【ROS总结】点激光扫描仪数据发布（驱动编写）">
-                        Previous<br>
-                        <span>【ROS总结】点激光扫描仪数据发布（驱动编写）</span>
-                        </a>
-                    </li>
-                    
                     
                     <li class="next">
-                        <a href="/2018/04/22/releaseros1-with-document/" data-toggle="tooltip" data-placement="top" title="【ROS总结】发布ROS1包之文档编写">
+                        <a href="/2016/09/28/ros-interface-odometry/" data-toggle="tooltip" data-placement="top" title="【ROS总结】 ROS接口——Odometry">
                         Next<br>
-                        <span>【ROS总结】发布ROS1包之文档编写</span>
+                        <span>【ROS总结】 ROS接口——Odometry</span>
                         </a>
                     </li>
                     
@@ -547,8 +413,8 @@
 <script type="text/javascript">
     /* * * CONFIGURATION VARIABLES * * */
     var disqus_shortname = "playfish";
-    var disqus_identifier = "/2018/04/22/releaseros1-into-rosdistro";
-    var disqus_url = "http://localhost:4000/2018/04/22/releaseros1-into-rosdistro/";
+    var disqus_identifier = "/2016/09/05/ros-startup-1";
+    var disqus_url = "http://localhost:4000/2016/09/05/ros-startup-1/";
 
     (function() {
         var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
