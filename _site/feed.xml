@@ -5,8 +5,8 @@
     <description>关于个人成长历程、ROS设计 | Carl Zhang，About personal growth, ROS designer. | 这里是 @Playfish 的个人博客，与你一起发现更大的世界。</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Sun, 13 May 2018 21:08:07 -0700</pubDate>
-    <lastBuildDate>Sun, 13 May 2018 21:08:07 -0700</lastBuildDate>
+    <pubDate>Sun, 13 May 2018 21:49:50 -0700</pubDate>
+    <lastBuildDate>Sun, 13 May 2018 21:49:50 -0700</lastBuildDate>
     <generator>Jekyll v3.7.3</generator>
     
       <item>
@@ -705,6 +705,95 @@
         <category>Release</category>
         
         <category>driver</category>
+        
+        
+      </item>
+    
+      <item>
+        <title>ros_arduino_bridge使用总结</title>
+        <description>&lt;blockquote&gt;
+  &lt;p&gt;说明:&lt;br /&gt;&lt;br /&gt;
+本文首发于 &lt;a href=&quot;https://blog.csdn.net/u011118482/article/details/77528798&quot;&gt;CSDN&lt;/a&gt;，转载请保留链接。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h2 id=&quot;前言&quot;&gt;前言&lt;/h2&gt;
+
+&lt;p&gt;关于ROS和Arduino通信方式，刚开始大多使用的是rosserial_arduino这个库，随后又诞生了一个新的库名为ros_arduino_bridge，两者对比如下：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;http://wiki.ros.org/rosserial_arduino&quot;&gt;rosserial_arduino&lt;/a&gt;：由于将Arduino内的程序写成ros节点形式，所以能够快速的通过ROS控制Arduino，并且可以忽略通信协议层，与之相同的还有rosserial_stm32f1库，但是由于将Arduino作为ROS节点，不可避免的产生通信延时较大的问题，而且运行该库是通过rosserial_python包内的serial_node.py启动，该脚本使用了tcpip协议，有点大材小用，uno速率会跟不上，导致启动过程中一崩溃很难在连接上的问题，学习ROS可以使用。&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;http://wiki.ros.org/rosserial_arduino_bridge&quot;&gt;ros_arduino_bridge&lt;/a&gt;：是自定义通信协议方式来与Arduino进行通信，和大多数控制形式一致，将通信协议固定可以让初学者在使用过程中了解通信协议，由于是自定义通信协议形式，可以即插即用，和rosserial_arduino有本质差别，不过在使用过程中需要自己配置，所以需要有一定的arudino编程基础，早期的EAI dashgo D1采用的就是这种形式，使用这个库可以缩短底盘开发时间，并且Arduino有很多开源包供使用，会相对轻松一些。&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;关于如何使用rosserial_arduino_bridge，作者在github的&lt;a href=&quot;https://github.com/hbrobotics/ros_arduino_bridge/blob/indigo-devel/README.md&quot;&gt;Readme&lt;/a&gt;中写的很清楚，当然，是使用英文编写，如果大家想要查看中文，&lt;a href=&quot;blog.csdn.net/github_30605157/article/details/51344150/&quot;&gt;这里&lt;/a&gt;是一个很好的方式，我做的小车就是参考这篇博客，写的很清楚。&lt;/p&gt;
+
+&lt;h2 id=&quot;注意事项&quot;&gt;注意事项&lt;/h2&gt;
+&lt;h3 id=&quot;编码器&quot;&gt;编码器&lt;/h3&gt;
+
+&lt;p&gt;关于如何使用我就不在赘述了，大家可以参考上面博客进行查看，作者代码在github上也有给出。查看作者代码发现作者应该用的Arduino mega板，电机控制器是L298N模块，我使用的是Arduino Uno板作为测试，电机控制器也选用的L298N，所以更改代码如下：&lt;/p&gt;
+
+&lt;p&gt;将&lt;a href=&quot;https://github.com/Sunlcy/ros_arduino_bridge/tree/indigo-devel-saturnbot-pid-tuning/ros_arduino_firmware/src/libraries/ROSArduinoBridge/encoder_driver.h&quot;&gt;ros_arduino_bridge/ros_arduino_firmware/src/libraries/ROSArduinoBridge/encoder_driver.h&lt;/a&gt;的内容：&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;#ifdef ARDUINO_MY_COUNTER  
+  #define LEFT_ENC_A 2  
+  #define LEFT_ENC_B 22  
+  #define RIGHT_ENC_A 21  
+  #define RIGHT_ENC_B 24  
+  void initEncoders();  
+  void leftEncoderEvent();  
+  void rightEncoderEvent();  
+#endif 
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;修改为&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    #ifdef ARDUINO_MY_COUNTER  
+      #define LEFT_ENC_A 2  
+      #define LEFT_ENC_B 4  
+      #define RIGHT_ENC_A 3  
+      #define RIGHT_ENC_B 11  
+      void initEncoders();  
+      void leftEncoderEvent();  
+      void rightEncoderEvent();  
+    #endif  
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;关于这点需要注意，由于Arduino Uno只有两个中断，所以只能将两个中断分开给左编码器和右编码器，即Uno两个中断对应硬件分别为2和3，其中引脚2对应中断号为0，引脚3对应中断号为1，如下图&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/in-post/ros-arduino-bridge-usage/arduino_pin.jpeg&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;修改完成后，还需修改&lt;a href=&quot;https://github.com/Sunlcy/ros_arduino_bridge/tree/indigo-devel-saturnbot-pid-tuning/ros_arduino_firmware/src/libraries/ROSArduinoBridge/encoder_driver.ino&quot;&gt;ros_arduino_bridge/ros_arduino_firmware/src/libraries/ROSArduinoBridge/encoder_driver.ino&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;将内容&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    void initEncoders(){  
+      pinMode(LEFT_ENC_A, INPUT);  
+      pinMode(LEFT_ENC_B, INPUT);  
+      pinMode(RIGHT_ENC_A, INPUT);  
+      pinMode(RIGHT_ENC_B, INPUT);  
+      
+      attachInterrupt(0, leftEncoderEvent, CHANGE);  
+      attachInterrupt(2, rightEncoderEvent, CHANGE);  
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;修改为&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    void initEncoders(){  
+      pinMode(LEFT_ENC_A, INPUT);  
+      pinMode(LEFT_ENC_B, INPUT);  
+      pinMode(RIGHT_ENC_A, INPUT);  
+      pinMode(RIGHT_ENC_B, INPUT);  
+      
+      attachInterrupt(0, leftEncoderEvent, CHANGE);  
+      attachInterrupt(1, rightEncoderEvent, CHANGE);  
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;注意变化，mega有四个中断，而Uno只有两个，所以需要修改为中断0、中断1。不然造成的结果是有一个电机编码器无数据，一直为0。&lt;/p&gt;
+
+&lt;p&gt;同样的，如果引脚类型不对应也会造成错误，如右电机，我将编码器A接上引脚3，编码器B接上引脚12，造成结果是右编码器数据一直在累加，即使电机没有转动，这是由于引脚3作为中断，类型为PWN引脚，而引脚12则为数字引脚，所以需要将编码器B接上引脚11，这是由于引脚11也为PWM类型，这样就不会造成错误。&lt;/p&gt;
+
+</description>
+        <pubDate>Sat, 25 Nov 2017 09:04:46 -0800</pubDate>
+        <link>http://localhost:4000/2017/11/25/ros-arduino-bridge-usage/</link>
+        <guid isPermaLink="true">http://localhost:4000/2017/11/25/ros-arduino-bridge-usage/</guid>
+        
+        <category>ROS1</category>
+        
+        <category>ros_arduino_bridge</category>
         
         
       </item>
