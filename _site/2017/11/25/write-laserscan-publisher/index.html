@@ -10,7 +10,7 @@
     <meta name="keywords"  content="张世伟, CarlZHang, Playfish, @Playfish, 张世伟的博客, ROS, 博客, 个人网站">
     <meta name="theme-color" content="#000000">
     
-    <title>【ROS总结】发布ROS2包到ROS版本 - Playfish的博客 | Carl Zhang Blog</title>
+    <title>【ROS总结】点激光扫描仪数据发布（驱动编写） - Playfish的博客 | Carl Zhang Blog</title>
 
     <!-- Web App Manifest -->
     <link rel="manifest" href="/pwa/manifest.json">
@@ -19,7 +19,7 @@
     <link rel="shortcut icon" href="/img/favicon.ico">
     
     <!-- Canonical URL -->
-    <link rel="canonical" href="http://localhost:4000/2018/04/25/releaseros2-into-rosdistro/">
+    <link rel="canonical" href="http://localhost:4000/2017/11/25/write-laserscan-publisher/">
 
     <!-- Bootstrap Core CSS -->
     <link rel="stylesheet" href="/css/bootstrap.min.css">
@@ -155,13 +155,13 @@
 
     <!-- Image to hack wechat -->
 <!-- <img src="/img/icon_wechat.png" width="0" height="0"> -->
-<!-- <img src="/img/in-post/release-ros2-into-rosdistro/ros2_logo.png" width="0" height="0"> -->
+<!-- <img src="/img/in-post/write-laserscan-publisher/laserscan.jpeg" width="0" height="0"> -->
 
 <!-- Post Header -->
 <style type="text/css">
     header.intro-header{
         position: relative;
-        background-image: url('/img/in-post/release-ros2-into-rosdistro/ros2_logo.png')
+        background-image: url('/img/in-post/write-laserscan-publisher/laserscan.jpeg')
     }
 
     
@@ -181,17 +181,19 @@
                 <div class="post-heading">
                     <div class="tags">
                         
-                        <a class="tag" href="/tags/#ROS2" title="ROS2">ROS2</a>
+                        <a class="tag" href="/tags/#ROS1" title="ROS1">ROS1</a>
                         
                         <a class="tag" href="/tags/#Release" title="Release">Release</a>
                         
+                        <a class="tag" href="/tags/#driver" title="driver">driver</a>
+                        
                     </div>
-                    <h1>【ROS总结】发布ROS2包到ROS版本</h1>
+                    <h1>【ROS总结】点激光扫描仪数据发布（驱动编写）</h1>
                     
                     
-                    <h2 class="subheading">Release ROS2 package into rosdistro</h2>
+                    <h2 class="subheading">Wirte laser scan data publisher(ROS driver)</h2>
                     
-                    <span class="meta">Posted by Playfish on April 25, 2018</span>
+                    <span class="meta">Posted by Playfish on November 25, 2017</span>
                 </div>
             </div>
         </div>
@@ -211,69 +213,334 @@
 
 				<blockquote>
   <p>说明:<br /><br />
-本文首发于 <a href="https://blog.csdn.net/u011118482/article/details/80075689">CSDN</a>，转载请保留链接。</p>
+本文首发于 <a href="https://blog.csdn.net/u011118482/article/details/78632555">CSDN</a>，转载请保留链接。</p>
 </blockquote>
 
 <h2 id="前言">前言</h2>
 
-<p>在上一总结中，讲述了如何将<a href="https://blog.csdn.net/u011118482/article/details/80039148">ROS1的包发布到ROS版本</a>（Indigo、jade、kinetic、lunar等），在这一节中，讲述如何把ROS2的包发送到ROS社区，比如发布到ROS2版本（ardent）。</p>
+<p>在使用ROS的过程中，不可避免的会遇到要自己手动编写驱动、节点、行为库、服务、消息等内容，尤其是需要一些传感器，而所需传感器没有相关ROS驱动时，下面将讲述的是在使用的传感器中，没有ROS驱动时，我们将如何使用该传感器。</p>
 
-<p>这个页面描述了如何准备在公共ROS 2 buildfarm上发布存储库。在你创建了一个包之后，这是将你的包引入到公开可用的Debian软件包(即：你将能够通过apt-get安装包。这个页面包含了ROS 2特定的指令，它取代了在ROS Wiki上的<a href="http://wiki.ros.org/cn/bloom/Tutorials/FirstTimeRelease">Bloom发布教程的第2部分</a>。</p>
+<p>在接下来的博客中将根据本身经验来编写一些ROS相关内容，权当是作为记忆来分享。</p>
 
-<p>注意：早期的ROS 2版本的发布过程主要依赖于<code class="highlighter-rouge">git-bloom-release</code>的子命令<code class="highlighter-rouge">bloom-release</code>，而不是完整的开放版本工作流，所以可能会有问题。</p>
+<h2 id="ros驱动点激光扫描仪">ROS驱动——点激光扫描仪</h2>
 
-<h2 id="对比ros1-bloom不同">对比ROS1 bloom不同</h2>
+<p>下面将讲述使用ROS官方未有的传感器来作为样例，我使用的是莱旭光电的CHT-10点激光传感器作为 介绍，首先这款传感器通信协议部分比较简单，基本上打开串口就可以读出数据，在将数据进行转换就可以得到想要的距离，比较方便，免去复杂的部分，对教程也有帮助，毕竟教程主要讲述的是ROS驱动部分。</p>
 
-<p>如果你在ROS1之前使用bloom发布过ROS包，ROS2的先决条件和ROS1差不多。然而，ROS 2还没有为你自动进行标记和版本控制的工具（没有等价于<code class="highlighter-rouge">catkin_create_changelog</code>工具）。</p>
+<p>相关ROS驱动代码可以在github上找到进行下载：https://github.com/Playfish/cht10_node</p>
 
-<h3 id="要求工具">要求工具</h3>
+<p>CHT-10是点激光，扫描范围是0.05-10m，真实的应该是0.15-10m，10m未测试，不过0.15盲区还是有的。</p>
 
-<p>对于ROS2的Ardent来说：</p>
+<p>下图是CHT-10的通信协议部分介绍：</p>
+
+<p><img src="/img/in-post/write-laserscan-publisher/laserscan_protocol.png" alt="" /></p>
+
+<p>可以看到想要的数据在9~12位（四字节），得到的数据需要除以1000才能得到真实的距离（米），ROS消息中基本单位是米。</p>
+
+<h3 id="消息选定">消息选定</h3>
+
+<p>关于选择什么消息作为该传感器的ROS消息，这个相对来说不是很重要，不过作为通用项来说，尽量向通用靠近（即使用ROS官方消息定义，而不是自己定义消息）。目前激光消息的话，有两个选择，第一个是sensor_msgs/LaserScan消息类型，不过该消息类型适合有角度的传感器，即180°或360°的2D雷达或激光，而目前使用的激光是单点类型，和激光笔差不多，只有一个点，那么可以选择sensor_msgs/Range消息类型，该消息类型适用于超声波传感器、红外传感器单点类型，CHT-10就用这个类型。</p>
+
+<p>关于该消息：可以查看<a href="docs.ros.org/api/sensor_msgs/html/msg/Range.html">sensor_msgs/Range</a></p>
+
+<h3 id="准备工作">准备工作</h3>
+
+<p>传感器选型选定、通信消息选定，那么接下来还需要做：</p>
 
 <ul>
-  <li>bloom &gt;= 0.6.2</li>
-  <li>catkin_pkg &gt;= 0.4.0</li>
+  <li>Frame_id：Frame在ROS中作用至关重要，消息将和TF绑定才可以读取数据，在这里作为通用可配置，暂定内容为：laser，用户可自定义设置（通过ROS Parameters设置）。</li>
+  <li>串口：避免和其他传感器串口冲突，因此在这里预留出一个串口设置参数，用户可以自定义设置（通过ROS Parameters设置）。</li>
+  <li>话题：消息内容需要通过话题发布，并且话题需要唯一，不然容易崩溃，在这里选择话题为“range”</li>
 </ul>
 
-<h3 id="过程">过程</h3>
+<p>当然以上部分可以不考虑，这个是作为通用型需要考虑的，暂时可以先忘记以上部分，下面开启代码部分</p>
 
-<h4 id="第一步changelog可选">第一步：changelog（可选）</h4>
+<h3 id="测试代码编写">测试代码编写</h3>
 
-<p>创建/更新CHANGELOG.rst，使用即将到来的新格式。注意，changelog严格来说是可选的，但它是非常推荐的。</p>
+<p>在这部分，主要先编写测试代码，如果测试代码无问题，就可以写到node中，测试代码和ROS无关系，只是通过串口读取数据，并且在终端显示出来，整体思路如下：</p>
 
-<p>注意你的changelog格式中的错误可能会导致你的包发布问题。提交并将更改提交给变更日志。</p>
+<p>传感器选择 -&gt; 测试程序测试（类似串口助手） -&gt; ROS node绑定（将测试程序读取部分加入到ROS中） -&gt; 将node加入到nodelet中封装</p>
 
-<h4 id="第二步标记包版本号">第二步：标记包版本号</h4>
+<p>下面是测试程序部分，也可以在cht10_node/test中找到，名为<a href="https://github.com/Playfish/cht10_node/blob/master/test/test_cht10.cpp">test_cht10.cpp</a>：</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    #include &lt;string&gt;  
+    #include &lt;cht10_node/seiral_func.hpp&gt;  
+    #include &lt;cstdlib&gt;  
+      
+    #include &lt;iostream&gt;  
+    #include &lt;stdint.h&gt;  
+    #define BUFSIZE 17  
+      
+    int main(int argc, char** argv){  
+      cht10_seiral_func::Cht10Driver cht10driver_;  
+      
+      std::string serialNumber_;  
+      serialNumber_ = "/dev/ttyUSB0";  
+      int baudRate_ = 115200;  
+      
+      std::stringstream ostream;  
+      int fd, len, rcv_cnt;  
+      bool success_flag;  
+      char buf[40], temp_buf[BUFSIZE],result_buf[BUFSIZE];  
+      int laser_data=0;  
+      char data_buf[4];  
+      rcv_cnt = 0;  
+      success_flag = false;  
+      memset(buf, 0xba, sizeof(buf));  
+      memset(temp_buf, 0xba, sizeof(temp_buf));  
+      memset(result_buf, 0xba, sizeof(result_buf));  
+      
+      fd = open(serialNumber_.c_str(), O_RDWR | O_NOCTTY | O_NDELAY );  
+      if(fd &lt; 0){  
+        std::cout&lt;&lt;"Open Serial: "&lt;&lt;serialNumber_.c_str()&lt;&lt;" Error!";  
+        exit(0);  
+      }  
+        
+      cht10driver_.UART0_Init(fd,baudRate_,0,8,1,'N');  
+      while(1){  
+        len = cht10driver_.UART0_Recv(fd, buf,40);  
+        if(len&gt;0){  
+          for(int i = 0; i &lt; len; i++){  
+            if(rcv_cnt&lt;=BUFSIZE){    
+              result_buf[rcv_cnt++] = buf[i];  
+              if(rcv_cnt == BUFSIZE){  
+                success_flag = true;  
+              }  
+            }//end if  
+            else{  
+              /**** 
+              *  checkout received data 
+              */  
+    //          std::cout&lt;&lt;"Received data, with :[";  
+    //          for(int j=0;j&lt;BUFSIZE;j++){  
+    //            printf("%c ",(unsigned char) result_buf[j]);  
+    //          }  
+    //          printf("] \n");  
+              success_flag = false;  
+      
+              for(int count = 0; count &lt; 4; count++){  
+                data_buf[count] = result_buf[9+count];  
+              }  
+              sscanf(data_buf, "%x", &amp;laser_data);  
+              std::cout&lt;&lt;"sensor data:"&lt;&lt;laser_data&lt;&lt;", Distance: "&lt;&lt;(double)laser_data/1000&lt;&lt;std::endl;  
+              /**** 
+               *  data writing end 
+               */  
+              if('~' == buf[i]){  
+                rcv_cnt = 0;  
+                result_buf[rcv_cnt++] = buf[i];  
+              }  
+            }//end else  
+          }//end for      
+        }  
+      }  
+      
+        
+    }  
+</code></pre></div></div>
+<p>我将串口部分封装成一个类名为<code class="highlighter-rouge">Cht10Driver</code>，该类包含串口读/写部分、初始化。</p>
 
-<p>在<code class="highlighter-rouge">&lt;package.xml&gt;</code>中更新包的版本。版本号必须比前一个版本高。对于你的第一个版本，我们建议0.0.1或1.0.0。提交并推动这个变更。</p>
+<p>通过使用<code class="highlighter-rouge">catkin_make</code>可以得到一个名为<code class="highlighter-rouge">test_cht10</code>的可执行文件，使用<code class="highlighter-rouge">./test_cht10</code>可以运行，将CHT-10插入到电脑上，并且电脑只有一个ttyUSB0，就可以读取数据，数据将显示为sensor data: 传感器毫米数据， Distance: 传感器米数据。</p>
 
-<p>注意，你不能使用以前使用的版本号(参见下面)。一些包释放到ROS 1和ROS 2，但是由于这个需求，必须使用不同的版本控制系列。ROS包通常不遵循严格的<a href="https://semver.org/">语义版本</a>控制，所以不要过分担心。如果你想了解其他人已经做了什么，请使用ROS 1发布包中的0.x.x或1.x.x系列和ROS 2发布包中的1.x.x或2.x.x系列。</p>
+<h3 id="ros驱动编写">ROS驱动编写</h3>
 
-<h4 id="第三步标记你的包">第三步：标记你的包</h4>
+<p>上部分讲述了测试程序编写，主要作用是通过串口读取传感器数据，那么得到传感器数据之后，就可以将传感器数据填充到ROS消息中，然后通过话题形式发布出去，如下是将传感器数据填充到ROS消息并封装成nodelet类的主要部分：</p>
 
-<p>创建一个与你刚刚输入到package.xml中的版本号相匹配的标记，在提交时，会遇到版本号。现在你知道了不能重用版本号的原因——git只允许在存储库中使用给定名称的一个标记。</p>
-
-<h4 id="第四步确保你的bloom和catkin_pkg是最新版本">第四步：确保你的bloom和catkin_pkg是最新版本</h4>
-
-<p>查看以上版本要求，运行以下命令追踪当前版本：</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>sudo apt-get install python-catkin-pkg python-bloom 
+<p>完整代码可以查看： <a href="https://github.com/Playfish/cht10_node/blob/master/src/cht10_node.cpp">cht10_node.cpp</a></p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    /** 
+     * @file /Cht10_serial_func/src/Cht10_serial_func.cpp 
+     * 
+     * @brief Implementation for dirver with read data from Cht10 nodelet 
+     * 
+     * @author Carl 
+     * 
+     **/  
+      
+    /***************************************************************************** 
+     ** Includes 
+     *****************************************************************************/  
+    #include &lt;string&gt;  
+    #include &lt;ros/ros.h&gt;  
+    #include &lt;std_msgs/String.h&gt;  
+    #include &lt;nodelet/nodelet.h&gt;  
+    #include &lt;ecl/threads/thread.hpp&gt;  
+    #include &lt;sensor_msgs/LaserScan.h&gt;    
+    #include &lt;sensor_msgs/Range.h&gt;    
+    #include &lt;pluginlib/class_list_macros.h&gt;  
+    #include &lt;cht10_node/seiral_func.hpp&gt;  
+      
+      
+    namespace cht10_seiral_func{  
+      
+    class Cht10Func : public nodelet::Nodelet{  
+    #define BUFSIZE 17  
+    #define SCALE 1000  
+      
+    public:  
+      Cht10Func() : shutdown_requested_(false),serialNumber_("/dev/USB0"),frame_id("laser"){}  
+      
+      ~Cht10Func(){  
+        NODELET_DEBUG_STREAM("Waiting for update thread to finish.");  
+        shutdown_requested_ = true;  
+        update_thread_.join();  
+      }  
+      
+      virtual void onInit(){  
+      
+        ros::NodeHandle nh = this-&gt;getPrivateNodeHandle();  
+        std::string name = nh.getUnresolvedNamespace();  
+        nh.getParam("serialNumber", serialNumber_);  
+        nh.getParam("baudRate", baudRate_);  
+        nh.getParam("frame_id", frame_id);  
+        rcv_cnt = 0;  
+        success_flag = 0;  
+      
+        fd = open(serialNumber_.c_str(), O_RDWR | O_NOCTTY | O_NDELAY );  
+        if(fd &lt; 0){  
+          ROS_ERROR_STREAM("Open Serial: "&lt;&lt;serialNumber_.c_str()&lt;&lt;" Error!");  
+          exit(0);  
+        }  
+      
+        int countSeq=0;  
+        scan_pub = nh.advertise&lt;sensor_msgs::Range&gt;("range",100);  
+        memset(buf, 0, sizeof(buf));  
+        memset(temp_buf, 0, sizeof(temp_buf));  
+        memset(result_buf, 0, sizeof(result_buf));  
+        Cht10driver_.UART0_Init(fd,baudRate_,0,8,1,'N');  
+        ROS_INFO_STREAM("Open serial: ["&lt;&lt; serialNumber_.c_str() &lt;&lt;" ] successful, with idex: "&lt;&lt;fd&lt;&lt;".");  
+        NODELET_INFO_STREAM("Cht10Func initialised. Spinning up update thread ... [" &lt;&lt; name &lt;&lt; "]");  
+        update_thread_.start(&amp;Cht10Func::update, *this);  
+      }  
+      
+      double data_to_meters(int &amp;data, int scale){  
+        return (double)data/scale;  
+      }  
+      
+      void publish_scan(ros::Publisher *pub,  
+                        double nodes, ros::Time start,  
+                        std::string frame_id){  
+      
+        float final_range;  
+        sensor_msgs::Range range_msg;  
+        range_msg.field_of_view = 0.05235988;  
+        range_msg.max_range = 10.0;  
+        range_msg.min_range = 0.05;  
+        range_msg.header.frame_id = frame_id;  
+        range_msg.radiation_type = sensor_msgs::Range::INFRARED;  
+        if(nodes &gt; range_msg.max_range){  
+          final_range = std::numeric_limits&lt;float&gt;::infinity();  
+        }else if(nodes &lt; range_msg.min_range){  
+          final_range = -std::numeric_limits&lt;float&gt;::infinity();  
+        }else{  
+          final_range = nodes;  
+        }  
+        range_msg.header.stamp = start;  
+        range_msg.header.seq = countSeq;  
+        range_msg.range = final_range;  
+        scan_pub.publish(range_msg);  
+      
+      }  
+      
+      bool get_scan_data(){  
+        len = Cht10driver_.UART0_Recv(fd, buf,40);  
+        if(len&gt;0){  
+          for(int i = 0; i &lt; len; i++){  
+            if(rcv_cnt&lt;=BUFSIZE){    
+              result_buf[rcv_cnt++] = buf[i];  
+              if(rcv_cnt == BUFSIZE){  
+                success_flag = true;  
+              }  
+            }//end if  
+            else{  
+              /**** 
+              *  checkout received data 
+              */  
+              success_flag = false;  
+               for(int count = 0; count &lt; 4; count++){  
+                data_buf[count] = result_buf[9+count];  
+              }  
+              sscanf(data_buf, "%x", &amp;laser_data);  
+                
+              //std::cout&lt;&lt;"sensor data:"&lt;&lt;laser_data&lt;&lt;std::endl;  
+      
+              /**** 
+               *  data writing end 
+               */  
+              if('~' == buf[i]){  
+                rcv_cnt = 0;  
+                result_buf[rcv_cnt++] = buf[i];  
+              }  
+            }//end else  
+          }//end for      
+        }  
+      }  
+    private:  
+      void update(){  
+        rcv_cnt = 0;  
+        success_flag = 0;  
+        laser_data = 0;  
+        ros::Rate spin_rate(50);  
+        memset(buf, 0, sizeof(buf));  
+        memset(temp_buf, 0, sizeof(temp_buf));  
+        memset(result_buf, 0, sizeof(result_buf));  
+        ROS_INFO_STREAM("Begin receive data from "&lt;&lt;serialNumber_.c_str()&lt;&lt;", with idex:"&lt;&lt;fd&lt;&lt;".");  
+        fd = open(serialNumber_.c_str(), O_RDWR | O_NOCTTY | O_NDELAY );  
+        Cht10driver_.UART0_Init(fd,baudRate_,0,8,1,'N');  
+        while (! shutdown_requested_ &amp;&amp; ros::ok())  
+        {  
+          start_scan_time = ros::Time::now();  
+          success_flag = get_scan_data();  
+                
+          //Send data  
+          publish_scan(&amp;scan_pub, data_to_meters(laser_data,SCALE),  
+                           start_scan_time, frame_id);  
+          spin_rate.sleep();  
+      
+          countSeq++;  
+        }  
+      
+        ROS_INFO_STREAM("Shotdown and close serial: "&lt;&lt;serialNumber_.c_str()&lt;&lt;".");  
+        Cht10driver_.UART0_Close(fd);  
+      }  
+    private:  
+      int fd, len, rcv_cnt;  
+      int success_flag;  
+      char buf[40], temp_buf[BUFSIZE],result_buf[BUFSIZE];  
+        
+      Cht10Driver Cht10driver_;  
+      ecl::Thread update_thread_;  
+      bool shutdown_requested_;  
+      ros::Publisher scan_pub;  
+      int laser_data;  
+      char data_buf[4];  
+      // ROS Parameters  
+      std::string serialNumber_;  
+      int baudRate_;  
+      int countSeq;  
+        
+      std::string frame_id;  
+      
+      ros::Time start_scan_time;  
+    };  
+      
+    } //namespace Cht10_serial_func  
+    PLUGINLIB_EXPORT_CLASS(cht10_seiral_func::Cht10Func,  
+    nodelet::Nodelet);  
 </code></pre></div></div>
 
-<h4 id="第五步设置ros-2环境变量">第五步：设置ROS 2环境变量</h4>
+<p>其中get_scan_data()函数，就是测试代码内容，得到数据后将数据发送到publish_scan()函数中，就可以发布传感器数据了。</p>
 
-<p>ROS 2使用的是全新的存储库，该版本的所有索引保存在https://github.com/ros2/rosdistro，forked该存储库。你可以通过设置ROSDISTRO_INDEX_URL环境变量来配置bloom。</p>
+<h3 id="测试">测试</h3>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>export ROSDISTRO_INDEX_URL='https://raw.githubusercontent.com/ros2/rosdistro/ros2/index.yaml'
+<p>代码完成后，按照格式进行编写CMakeList、package文件，运行catkin_make就可以得到名为cht10_node.so动态库，运行launch文件即可加载，命令如下：</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>roslaunch cht10_node standalone.launch 
 </code></pre></div></div>
+<p>如果一切成才，运行rostopic list 可以得到/range话题。</p>
 
-<p>导出这个之后，你将能够在你的bloom-release终端命令中使用ROS 2发行版的<code class="highlighter-rouge">ardent</code>, <code class="highlighter-rouge">bouncy</code>等名称。</p>
+<p>使用rostopic echo /range就可以得到传感器的ROS消息内容，包括传感器距离。</p>
 
-<h3 id="下一步">下一步</h3>
-
-<p>现在，你的存储库设置完毕。你已经手动完成ROS 2在<a href="http://wiki.ros.org/cn/bloom/Tutorials/PrepareUpstream">这个界面</a>的内容</p>
-
-<p>返回到ROS Wiki上的<a href="http://wiki.ros.org/cn/bloom/Tutorials/FirstTimeRelease">Bloom发布</a>教程，并继续“创建一个发布存储库”。</p>
+<p>或者直接运行</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>roslaunch cht10_node view_range.launch
+</code></pre></div></div>
+<p>就可以看到图形化形式为传感器数据。</p>
 
 
 
@@ -281,13 +548,13 @@
 
                 <ul class="pager">
                     
-                    <li class="previous">
-                        <a href="/2018/04/22/releaseros1-with-document/" data-toggle="tooltip" data-placement="top" title="【ROS总结】发布ROS1包之文档编写">
-                        Previous<br>
-                        <span>【ROS总结】发布ROS1包之文档编写</span>
+                    
+                    <li class="next">
+                        <a href="/2018/04/22/releaseros1-into-rosdistro/" data-toggle="tooltip" data-placement="top" title="【ROS总结】发布ROS1包到ROS版本">
+                        Next<br>
+                        <span>【ROS总结】发布ROS1包到ROS版本</span>
                         </a>
                     </li>
-                    
                     
                 </ul>
 
@@ -399,8 +666,8 @@
 <script type="text/javascript">
     /* * * CONFIGURATION VARIABLES * * */
     var disqus_shortname = "playfish";
-    var disqus_identifier = "/2018/04/25/releaseros2-into-rosdistro";
-    var disqus_url = "http://localhost:4000/2018/04/25/releaseros2-into-rosdistro/";
+    var disqus_identifier = "/2017/11/25/write-laserscan-publisher";
+    var disqus_url = "http://localhost:4000/2017/11/25/write-laserscan-publisher/";
 
     (function() {
         var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
