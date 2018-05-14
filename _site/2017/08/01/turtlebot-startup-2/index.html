@@ -382,7 +382,7 @@ export ROS_MASTER_URI=http://192.168.0.100:11311
       <span class="nb">eval</span> <span class="sb">`</span>dbus-launch <span class="nt">--sh-syntax</span> <span class="nt">--exit-with-session</span><span class="sb">`</span>
       <span class="nb">echo</span> <span class="s2">"D-Bus per-session daemon address is: </span><span class="nv">$DBUS_SESSION_BUS_ADDRESS</span><span class="s2">"</span>
 <span class="k">fi
-</span><span class="nv">d</span><span class="o">=</span><span class="s2">"</span><span class="k">$(</span>date +%Y%m%d-%H:%M:%S<span class="k">)</span><span class="s2">"</span>
+</span><span class="nv">d</span><span class="o">=</span><span class="s2">"</span><span class="k">$(</span><span class="nb">date</span> +%Y%m%d-%H:%M:%S<span class="k">)</span><span class="s2">"</span>
 <span class="nb">echo</span> <span class="s2">"[</span><span class="nv">$d</span><span class="s2">]:source opt "</span> <span class="o">&gt;</span> /home/<span class="nv">$USER</span>/aotu_runing/print_log.txt
 
 <span class="nb">source</span> /opt/ros/indigo/setup.bash
@@ -930,6 +930,20 @@ $ sudo service myrobot restart  #重启脚本服务
 
 
 <!-- Baidu Tongji -->
+
+<script>
+    // dynamic User by Hux
+    var _baId = '545231b25ad567a9b2d47203bb473428';
+
+    // Originial
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?" + _baId;
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+</script>
 
 
 

@@ -5,9 +5,9 @@
     <description>关于个人成长历程、ROS设计 | Carl Zhang，About personal growth, ROS designer. | 这里是 @Playfish 的个人博客，与你一起发现更大的世界。</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Sun, 13 May 2018 23:06:20 -0700</pubDate>
-    <lastBuildDate>Sun, 13 May 2018 23:06:20 -0700</lastBuildDate>
-    <generator>Jekyll v3.7.3</generator>
+    <pubDate>Mon, 14 May 2018 03:42:24 -0700</pubDate>
+    <lastBuildDate>Mon, 14 May 2018 03:42:24 -0700</lastBuildDate>
+    <generator>Jekyll v3.8.1</generator>
     
       <item>
         <title>【ROS总结】发布ROS2包到ROS版本</title>
@@ -971,7 +971,7 @@ export ROS_MASTER_URI=http://192.168.0.100:11311
       &lt;span class=&quot;nb&quot;&gt;eval&lt;/span&gt; &lt;span class=&quot;sb&quot;&gt;`&lt;/span&gt;dbus-launch &lt;span class=&quot;nt&quot;&gt;--sh-syntax&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--exit-with-session&lt;/span&gt;&lt;span class=&quot;sb&quot;&gt;`&lt;/span&gt;
       &lt;span class=&quot;nb&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;D-Bus per-session daemon address is: &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$DBUS_SESSION_BUS_ADDRESS&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;
 &lt;span class=&quot;k&quot;&gt;fi
-&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;d&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;$(&lt;/span&gt;date +%Y%m%d-%H:%M:%S&lt;span class=&quot;k&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;
+&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;d&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;$(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;date&lt;/span&gt; +%Y%m%d-%H:%M:%S&lt;span class=&quot;k&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;
 &lt;span class=&quot;nb&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$d&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;]:source opt &quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; /home/&lt;span class=&quot;nv&quot;&gt;$USER&lt;/span&gt;/aotu_runing/print_log.txt
 
 &lt;span class=&quot;nb&quot;&gt;source&lt;/span&gt; /opt/ros/indigo/setup.bash
