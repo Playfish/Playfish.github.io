@@ -5,8 +5,8 @@
     <description>关于个人成长历程、ROS设计 | Carl Zhang，About personal growth, ROS designer. | 这里是 @Playfish 的个人博客，与你一起发现更大的世界。</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Sun, 13 May 2018 21:49:50 -0700</pubDate>
-    <lastBuildDate>Sun, 13 May 2018 21:49:50 -0700</lastBuildDate>
+    <pubDate>Sun, 13 May 2018 22:53:35 -0700</pubDate>
+    <lastBuildDate>Sun, 13 May 2018 22:53:35 -0700</lastBuildDate>
     <generator>Jekyll v3.7.3</generator>
     
       <item>
@@ -794,6 +794,864 @@
         <category>ROS1</category>
         
         <category>ros_arduino_bridge</category>
+        
+        
+      </item>
+    
+      <item>
+        <title>【ROS总结】Turtlebot ROS 开机自启动设置(2)</title>
+        <description>&lt;blockquote&gt;
+  &lt;p&gt;说明:&lt;br /&gt;&lt;br /&gt;
+本文首发于 &lt;a href=&quot;https://blog.csdn.net/u011118482/article/details/76549144&quot;&gt;CSDN&lt;/a&gt;，转载请保留链接。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h2 id=&quot;前言&quot;&gt;前言&lt;/h2&gt;
+
+&lt;p&gt;之前写过一篇&lt;a href=&quot;https://blog.csdn.net/u011118482/article/details/52437927&quot;&gt;Turtlebot下的开机自启动设置&lt;/a&gt;，这几天由于项目原因重新整理下，虽然已经有过先例，但是还是碰到了不少错误(keng)，前一篇写的是rc.local方式写入制成自启动脚本，现在换一种方式，改用启动内置控制台终端tty形式作为自启动设置，适用于桌面。&lt;/p&gt;
+
+&lt;p&gt;开机启动方式很多，不唯一，我所知道的是：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;rc.local开启启动&lt;/li&gt;
+  &lt;li&gt;linux内置服务启动，包括上一篇的ROS的upstart包。&lt;/li&gt;
+  &lt;li&gt;内置控制台终端启动tty&lt;/li&gt;
+  &lt;li&gt;开机界面后启动终端，例如Startup Application.等等&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;下面以项目为例讲述开机启动，rc.local就不在赘述了，目前两个功能进行实现，一种是开启自启动地图创建程序，另一种是开机自启动跟随脚本，两个脚本还是和之前一样，所有的节点全部都在一个脚本中。&lt;/p&gt;
+
+&lt;p&gt;原本觉得很容易，结果很悲剧的我想当然了，尤其是地图创建程序，涉及到两台电脑通信，如果把两个脚本（minimal和gmapping_demo）合并的话，就可以发现，程序挂起成功，在进程中可以看到，但是，没法用另外一台电脑查看，也就是说，另一台电脑和turtlebot上电脑没有master通信，不用怀疑，ROS的系统变量是正确的，并且两台电脑是同一网段，就是没有办法用另一台电脑使用rosnode list来查看turtlebot上电脑的节点。如果有知道原因的还请告知，个人理解应该是gmapping的代码导致master外部通信阻塞缘故。&lt;/p&gt;
+
+&lt;p&gt;好，言归正转，地图创建自启动程序分开运行，原因如上，也就是说分别开两个终端运行minimal和gmapping。如下&lt;/p&gt;
+
+&lt;h2 id=&quot;内置控制台终端tty自启动&quot;&gt;内置控制台终端tty自启动&lt;/h2&gt;
+
+&lt;p&gt;这个方式只对gmapping使用就可以了，其他都是正常的，因为没有把脚本分开，所以使用两个tty控制台。&lt;/p&gt;
+
+&lt;p&gt;首先打开终端，输入如下命令：&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$  sudo vi /etc/init/tty1.config 
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;整个文件如下，修改部分请对照好。&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    # tty1 - getty  
+    #  
+    # This service maintains a getty on tty1 from the point the system is  
+    # started until it is shut down again.  
+      
+    start on stopped rc RUNLEVEL=[2345] and (  
+                not-container or  
+                container CONTAINER=lxc or  
+                container CONTAINER=lxc-libvirt)  
+      
+    stop on runlevel [!2345]  
+      
+    respawn  
+    exec /sbin/getty -8 38400 tty1  
+    exec /sbin/mingetty --autologin ubuntu tty1  
+
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;同样的保存退出后，修改另一个终端，输入如下命令：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$  sudo vi /etc/init/tty2.config 
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;内容如下：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;# tty2 - getty  
+#  
+# This service maintains a getty on tty2 from the point the system is  
+# started until it is shut down again.  
+  
+start on runlevel [23] and (  
+            not-container or  
+            container CONTAINER=lxc or  
+            container CONTAINER=lxc-libvirt)  
+  
+stop on runlevel [!23]  
+  
+respawn  
+exec /sbin/getty -8 38400 tty2  
+exec /sbin/mingetty --autologin ubuntu tty2
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;随后修改登陆命令，改成不需要密码登陆，输入&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$  sudo vi /etc/sudoers 
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;全部文本如下：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;#  
+# This file MUST be edited with the 'visudo' command as root.  
+#  
+# Please consider adding local content in /etc/sudoers.d/ instead of  
+# directly modifying this file.  
+#  
+# See the man page for details on how to write a sudoers file.  
+#  
+Defaults        env_reset  
+Defaults        mail_badpass  
+Defaults        secure_path=&quot;/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin&quot;  
+  
+# Host alias specification  
+  
+# User alias specification  
+  
+# Cmnd alias specification  
+  
+# User privilege specification  
+root    ALL=(ALL:ALL) ALL  
+  
+# Members of the admin group may gain root privileges  
+%admin ALL=(ALL) ALL  
+  
+# Allow members of group sudo to execute any command  
+%sudo   ALL=(ALL:ALL) ALL  
+  
+# See sudoers(5) for more information on &quot;#include&quot; directives:  
+  
+#includedir /etc/sudoers.d  
+  
+ubuntu ALL=NOPASSWD:ALL
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;最后修改~/.bashrc文件，在最后添加：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$  gedit ~/.bashrc
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;添加：&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    ##auto start  
+        Terminal=`tty`  
+        case $Terminal in  
+            &quot;/dev/tty1&quot;) roslaunch turtlebot_bringup minimal.launch;;  #在tty1 启动minimal  
+            &quot;/dev/tty2&quot;) sleep 10;roslaunch turtlebot_navigation gmapping_demo.launch;;  #等待10秒后，在tty2启动地图创建  
+        esac  
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h2 id=&quot;测试&quot;&gt;测试&lt;/h2&gt;
+
+&lt;p&gt;在开始测试之前，首先确保你的bashrc文件中，修改正确了ROS_HOSTNAME和ROS_IP以及ROS_MASTER_URI的值，并且和另一台测试电脑在同一网段。&lt;/p&gt;
+
+&lt;p&gt;turtlebot电脑运行成功提示，假设当前ip为192.168.0.100，另一台测试电脑ip为192.168.0.101，配置如下：&lt;/p&gt;
+
+&lt;p&gt;turtlebot电脑的.bashrc中，应该有&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    export ROS_HOSTNAME=192.168.0.100  
+    export ROS_IP=192.168.0.100  
+    export ROS_MASTER_URI=http://192.168.0.100:11311
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;测试电脑.bashrc，也应该有&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;export ROS_HOSTNAME=192.168.0.101  
+export ROS_IP=192.168.0.101  
+export ROS_MASTER_URI=http://192.168.0.100:11311 
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;重新启动turtlebot电脑，等待完成后，使用另一台电脑测试，运行&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;roslaunch turtlebot_rviz_launchers view_navigation.launch
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;就可以在viz中看到当前地图创建情况，控制运行：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    roslaunch turtlebot_teleop keyboard_teleop.launch
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;地图创建自启动完成。&lt;/p&gt;
+
+&lt;h2 id=&quot;其他方式自启动&quot;&gt;其他方式自启动&lt;/h2&gt;
+
+&lt;h3 id=&quot;startup-applications&quot;&gt;Startup Applications&lt;/h3&gt;
+&lt;p&gt;只讲述linux应用设置，关于ROS包，教程太多就不说了，最简单的自启动方式就是在桌面上，按下“开始”键位，在弹出的搜索框中输入“Startup Applications”，应用弹出后，选择Add，然后在command行中输入：/usr/bin/gnome-terminal -x /home/ubuntu/aotu_runing/minimal_follower.sh即可。&lt;/p&gt;
+
+&lt;p&gt;minimal_follower.sh内容如下:&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c&quot;&gt;#! /bin/bash&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;if &lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;test&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-z&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$DBUS_SESSION_BUS_ADDRESS&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;then&lt;/span&gt;
+      &lt;span class=&quot;c&quot;&gt;## if not found, launch a new one&lt;/span&gt;
+      &lt;span class=&quot;nb&quot;&gt;eval&lt;/span&gt; &lt;span class=&quot;sb&quot;&gt;`&lt;/span&gt;dbus-launch &lt;span class=&quot;nt&quot;&gt;--sh-syntax&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--exit-with-session&lt;/span&gt;&lt;span class=&quot;sb&quot;&gt;`&lt;/span&gt;
+      &lt;span class=&quot;nb&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;D-Bus per-session daemon address is: &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$DBUS_SESSION_BUS_ADDRESS&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;fi
+&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;d&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;$(&lt;/span&gt;date +%Y%m%d-%H:%M:%S&lt;span class=&quot;k&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$d&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;]:source opt &quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; /home/&lt;span class=&quot;nv&quot;&gt;$USER&lt;/span&gt;/aotu_runing/print_log.txt
+
+&lt;span class=&quot;nb&quot;&gt;source&lt;/span&gt; /opt/ros/indigo/setup.bash
+&lt;span class=&quot;nb&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$d&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;]:source bashrc &quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;gt;&amp;gt;&lt;/span&gt; /home/&lt;span class=&quot;nv&quot;&gt;$USER&lt;/span&gt;/aotu_runing/print_log.txt
+
+&lt;span class=&quot;nb&quot;&gt;source&lt;/span&gt; /home/ubuntu/.bashrc
+&lt;span class=&quot;nb&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$d&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;]:source catkin_ws &quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;gt;&amp;gt;&lt;/span&gt; /home/&lt;span class=&quot;nv&quot;&gt;$USER&lt;/span&gt;/aotu_runing/print_log.txt
+
+&lt;span class=&quot;nb&quot;&gt;source&lt;/span&gt; /home/&lt;span class=&quot;nv&quot;&gt;$USER&lt;/span&gt;/catkin_ws/devel/setup.bash
+
+&lt;span class=&quot;nb&quot;&gt;export &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;TURTLEBOT_BASE&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;kobuki
+&lt;span class=&quot;nb&quot;&gt;export &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;TURTLEBOT_3D_SENSOR&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;astra
+&lt;span class=&quot;nb&quot;&gt;export &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;ROS_HOSTNAME&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;localhost
+&lt;span class=&quot;nb&quot;&gt;export &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;ROS_MASTER_URI&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;http://localhost:1311
+&lt;span class=&quot;nb&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$d&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;]:source catkin_ws again &quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;gt;&amp;gt;&lt;/span&gt; /home/&lt;span class=&quot;nv&quot;&gt;$USER&lt;/span&gt;/aotu_runing/print_log.txt
+
+&lt;span class=&quot;nb&quot;&gt;source&lt;/span&gt; /home/&lt;span class=&quot;nv&quot;&gt;$USER&lt;/span&gt;/catkin_ws/devel/setup.bash
+&lt;span class=&quot;nb&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$d&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;]:minimal runing &quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; /home/&lt;span class=&quot;nv&quot;&gt;$USER&lt;/span&gt;/aotu_runing/print_log.txt
+roslaunch roch_bringup minimal_follower.launch  &lt;span class=&quot;o&quot;&gt;&amp;gt;&amp;gt;&lt;/span&gt;  /home/&lt;span class=&quot;nv&quot;&gt;$USER&lt;/span&gt;/aotu_runing/print_log.txt
+&lt;span class=&quot;nb&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$d&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;]:minimal runing successfully. &quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;gt;&amp;gt;&lt;/span&gt; /home/&lt;span class=&quot;nv&quot;&gt;$USER&lt;/span&gt;/aotu_runing/print_log.txt
+
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;最终这个脚本启动的是turtlebot_bringup下的 minimal_follower.launch，minimal_follower.launch内容如下：&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&amp;lt;launch&amp;gt;
+  &amp;lt;!-- TURTLEBOT Configure --&amp;gt;
+  &amp;lt;arg name=&quot;base&quot;                      default=&quot;$(env TURTLEBOT_BASE)&quot;                              doc=&quot;mobile base type [TURTLEBOT]&quot;/&amp;gt;
+  &amp;lt;arg name=&quot;stacks&quot;                    default=&quot;$(env TURTLEBOT_STACKS)&quot;                    doc=&quot;stack type displayed in visualisation/simulation [standard]&quot;/&amp;gt;
+  &amp;lt;arg name=&quot;3d_sensor&quot;                 default=&quot;$(env TURTLEBOT_3D_SENSOR)&quot;                 doc=&quot;3d sensor types [kinect, asus_xtion_pro, r200]&quot;/&amp;gt;
+  &amp;lt;arg name=&quot;serialport&quot;                default=&quot;$(env TURTLEBOT_SERIAL_PORT)&quot;               doc=&quot;used by create to configure the port it is connected on [/dev/ttyUSB0, /dev/ttyS0]&quot;/&amp;gt;
+  &amp;lt;arg name=&quot;simulation&quot;        default=&quot;$(env TURTLEBOT_SIMULATION)&quot;                doc=&quot;set flags to indicate this turtle is run in simulation mode.&quot;/&amp;gt;
+  &amp;lt;arg name=&quot;robot_name&quot;        default=&quot;$(env TURTLEBOT_NAME)&quot;                      doc=&quot;used as a unique identifier and occasionally to preconfigure root namespaces, gateway/zeroconf ids etc.&quot;/&amp;gt;
+  &amp;lt;arg name=&quot;robot_type&quot;        default=&quot;$(env TURTLEBOT_TYPE)&quot;                      doc=&quot;just in case you are considering a 'variant' and want to make use of this.&quot;/&amp;gt;
+
+
+  &amp;lt;param name =&quot;/use_sim_time&quot; value=&quot;$(arg simulation)&quot;/&amp;gt;
+
+  &amp;lt;!-- Load robot model --&amp;gt;
+  &amp;lt;include file=&quot;$(find turtlebot_bringup)/launch/includes/robot.launch.xml&quot;&amp;gt;
+    &amp;lt;arg name=&quot;base&quot; value=&quot;$(arg base)&quot; /&amp;gt;
+    &amp;lt;arg name=&quot;stacks&quot; value=&quot;$(arg stacks)&quot; /&amp;gt;
+    &amp;lt;arg name=&quot;3d_sensor&quot; value=&quot;$(arg 3d_sensor)&quot; /&amp;gt;
+  &amp;lt;/include&amp;gt;
+
+  &amp;lt;!-- Load robot base--&amp;gt;
+  &amp;lt;include file=&quot;$(find turtlebot_bringup)/launch/includes/mobile_base.launch.xml&quot;&amp;gt;
+    &amp;lt;arg name=&quot;base&quot; value=&quot;$(arg base)&quot; /&amp;gt;
+    &amp;lt;arg name=&quot;serialport&quot; value=&quot;$(arg serialport)&quot; /&amp;gt;
+  &amp;lt;/include&amp;gt;
+
+ &amp;lt;group unless=&quot;$(arg simulation)&quot;&amp;gt; &amp;lt;!-- Real robot --&amp;gt;
+    &amp;lt;include file=&quot;$(find turtlebot_follower)/launch/includes/velocity_smoother.launch.xml&quot;&amp;gt;
+      &amp;lt;arg name=&quot;nodelet_manager&quot;  value=&quot;/mobile_base_nodelet_manager&quot;/&amp;gt;
+      &amp;lt;arg name=&quot;navigation_topic&quot; value=&quot;twist_mux/input/navi&quot;/&amp;gt;
+    &amp;lt;/include&amp;gt;
+
+    &amp;lt;include file=&quot;$(find turtlebot_bringup)/launch/sensor.launch&quot;&amp;gt;
+      &amp;lt;arg name=&quot;rgb_processing&quot;                  value=&quot;true&quot;/&amp;gt;  &amp;lt;!-- only required if we use android client --&amp;gt;
+      &amp;lt;arg name=&quot;depth_processing&quot;                value=&quot;true&quot;/&amp;gt;
+      &amp;lt;arg name=&quot;depth_registered_processing&quot;     value=&quot;false&quot;/&amp;gt;
+      &amp;lt;arg name=&quot;depth_registration&quot;              value=&quot;false&quot;/&amp;gt;
+      &amp;lt;arg name=&quot;disparity_processing&quot;            value=&quot;false&quot;/&amp;gt;
+      &amp;lt;arg name=&quot;disparity_registered_processing&quot; value=&quot;false&quot;/&amp;gt;
+    &amp;lt;/include&amp;gt;
+  &amp;lt;/group&amp;gt;
+  &amp;lt;group if=&quot;$(arg simulation)&quot;&amp;gt;
+    &amp;lt;!-- Load nodelet manager for compatibility --&amp;gt;
+    &amp;lt;node pkg=&quot;nodelet&quot; type=&quot;nodelet&quot; ns=&quot;camera&quot; name=&quot;camera_nodelet_manager&quot; args=&quot;manager&quot;/&amp;gt;
+
+    &amp;lt;include file=&quot;$(find turtlebot_follower)/launch/includes/velocity_smoother.launch.xml&quot;&amp;gt;
+      &amp;lt;arg name=&quot;nodelet_manager&quot;  value=&quot;camera/camera_nodelet_manager&quot;/&amp;gt;
+      &amp;lt;arg name=&quot;navigation_topic&quot; value=&quot;/twist/input/navi&quot;/&amp;gt;
+    &amp;lt;/include&amp;gt;
+  &amp;lt;/group&amp;gt;
+
+  &amp;lt;param name=&quot;camera/rgb/image_color/compressed/jpeg_quality&quot; value=&quot;22&quot;/&amp;gt;
+
+  &amp;lt;!-- Make a slower camera feed available; only required if we use android client --&amp;gt;
+  &amp;lt;node pkg=&quot;topic_tools&quot; type=&quot;throttle&quot; name=&quot;camera_throttle&quot;
+        args=&quot;messages camera/rgb/image_color/compressed 5&quot;/&amp;gt;
+
+
+  &amp;lt;!--  Real robot: Load turtlebot follower into the  sensors nodelet manager to avoid pointcloud serializing --&amp;gt;
+  &amp;lt;!--  Simulation: Load turtlebot follower into nodelet manager for compatibility --&amp;gt;
+  &amp;lt;node pkg=&quot;nodelet&quot; type=&quot;nodelet&quot; name=&quot;turtlebot_follower&quot;
+        args=&quot;load turtlebot_follower/TurtlebotFollower camera/camera_nodelet_manager&quot;&amp;gt;
+    &amp;lt;remap from=&quot;turtlebot_follower/cmd_vel&quot; to=&quot;follower_velocity_smoother/raw_cmd_vel&quot;/&amp;gt;
+    &amp;lt;remap from=&quot;depth/points&quot; to=&quot;camera/depth/points&quot;/&amp;gt;
+    &amp;lt;remap from=&quot;depth/image_rect&quot; to=&quot;/camera/depth/image_rect&quot;/&amp;gt;
+    &amp;lt;param name=&quot;enabled&quot; value=&quot;true&quot; /&amp;gt;
+    &amp;lt;param name=&quot;x_scale&quot; value=&quot;7.0&quot; /&amp;gt;
+    &amp;lt;param name=&quot;z_scale&quot; value=&quot;2.0&quot; /&amp;gt;
+    &amp;lt;param name=&quot;min_x&quot; value=&quot;-0.35&quot; /&amp;gt;
+    &amp;lt;param name=&quot;max_x&quot; value=&quot;0.35&quot; /&amp;gt;
+    &amp;lt;param name=&quot;min_y&quot; value=&quot;0.1&quot; /&amp;gt;
+    &amp;lt;param name=&quot;max_y&quot; value=&quot;0.5&quot; /&amp;gt;
+    &amp;lt;param name=&quot;max_z&quot; value=&quot;1.2&quot; /&amp;gt;
+    &amp;lt;param name=&quot;goal_z&quot; value=&quot;0.6&quot; /&amp;gt;
+  &amp;lt;/node&amp;gt;
+  &amp;lt;!-- Launch the script which will toggle turtlebot following on and off based on a joystick button. default: on --&amp;gt;
+  &amp;lt;node name=&quot;switch&quot; pkg=&quot;turtlebot_follower&quot; type=&quot;switch.py&quot;/&amp;gt;
+&amp;lt;/launch&amp;gt;
+                                                                                          
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;使用桌面程序弊端在于修改的话需要重新连接显示屏，比较麻烦，不过不长改。&lt;/p&gt;
+
+&lt;p&gt;注意：$USER千万不要用在/etc/rc.local下，否则会造成rc.local自启动不成功，没有反应，这一点坑了我很长时间。&lt;/p&gt;
+
+&lt;p&gt;如果启动后，无法跟随，说明astra没有启动成功，可以在/var/log/apport.log中看到输出消息，解决办法就是在脚本中添加：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    if test -z &quot;$DBUS_SESSION_BUS_ADDRESS&quot; ; then  
+          ## if not found, launch a new one  
+          eval `dbus-launch --sh-syntax --exit-with-session`  
+          echo &quot;D-Bus per-session daemon address is: $DBUS_SESSION_BUS_ADDRESS&quot;  
+    fi  
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;就可以。&lt;/p&gt;
+
+&lt;h3 id=&quot;robot_upstart-网络&quot;&gt;robot_upstart 网络&lt;/h3&gt;
+&lt;h4 id=&quot;配置&quot;&gt;配置&lt;/h4&gt;
+&lt;p&gt;今天使用前几个方式在笔记本上进行自启动不成功，原因应该在于网络，节点/话题什么都有，但是无法使用rosnode list，因此，使用了robot_upstart来尝试，首先安装robot_upstart包，安装步骤比较简单：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ sudo apt-get install ros-indigo-robot-upstart
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;安装完成后，大家可以查看&lt;a href=&quot;http://docs.ros.org/jade/api/robot_upstart/html/&quot;&gt;使用文档&lt;/a&gt;来进行使用，方式也比较简单，不过是单一launch启动，由于clearpath的机器人譬如husky只提供了底盘启动的缘故，不过大家可以将多个launch合并为一个来进行启动，启动方式也比较简单，首先，安装需要自启动的launch文件，使用方式如下：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ rosrun robot_upstart install myrobot_bringup/launch/base.launch
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;其中myrobot_bringup是要启动launch文件所在的包，base.launch是要启动的launch文件，只需要提供包到launch文件路径即可。需要注意的是，运行这个命令需要在sudo root权限下，这个步骤将写到系统中。&lt;/p&gt;
+
+&lt;p&gt;安装launch文件完成后，将提示有很多文件被放到了系统中，如下输出：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    Preparing to install files to the following paths:  
+      /etc/init/turtlebot.conf  
+      /etc/ros/indigo/turtlebot.d/.installed_files  
+      /etc/ros/indigo/turtlebot.d/minimal.launch  
+      /usr/sbin/turtlebot-start  
+      /usr/sbin/turtlebot-stop  
+    Now calling: /usr/bin/sudo /opt/ros/indigo/lib/robot_upstart/mutate_files  
+    Filesystem operation succeeded. 
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;现在启动服务的话，只是单机模式，即ROS_HOSTNAME/ROS_IP/ROS_MASTER_URI都是localhost，如果想要另外一个同一网段的计算机查看当前计算机的node/topic时，就需要对脚本进行修改，重要的脚本为  /usr/sbin/turtlebot-start，将该脚本中的&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    28  export ROS_HOSTNAME=$(hostname)  
+      
+    30  export ROS_MASTER_URI=http://127.0.0.1:11311  
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;修改为当前电脑局域网内的IP，比如我的为192.168.0.106，最好将上面的注释掉，重新书写一遍：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;28  export ROS_HOSTNAME=192.168.0.106  
+  
+30  export ROS_MASTER_URI=http://192.168.0.106:11311 
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;现在运行服务，运行操作共有如下：&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ sudo service myrobot start  #启动脚本服务  
+$ sudo service myrobot stop  #停止脚本服务  
+$ sudo service myrobot restart  #重启脚本服务 
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;其中myrobot为安装launch文件中提示的，比如我的为turtlebot，查看/usr/sbin/turtlebot-start名字可以知道。启动完成后，在本地运行终端：&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ rostopic list
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;将会有输出，也可以在同一网段内的电脑上，配置好网络后，运行&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ rostopic list
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;也可以得到输出。服务输出日志文件为/var/log/upstart/myrobot.log，其中myrobot在我的电脑上为turtlebot.log。如果运行服务后没有输出，可以查看这个文件进行调试。&lt;/p&gt;
+
+&lt;h4 id=&quot;卸载&quot;&gt;卸载&lt;/h4&gt;
+
+&lt;p&gt;卸载命令如下&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;rosrun robot_upstart uninstall [-h] [--rosdistro DISTRO] JOBNAME
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;其中，JOBNAME是要卸载的脚本，比如我的是turtlebot，DISTRO为指定ROS版本，存在多个脚本时需要用到，比如：&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;rosrun robot_upstart uninstall turtlebot
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+</description>
+        <pubDate>Tue, 01 Aug 2017 12:31:00 -0700</pubDate>
+        <link>http://localhost:4000/2017/08/01/turtlebot-startup-2/</link>
+        <guid isPermaLink="true">http://localhost:4000/2017/08/01/turtlebot-startup-2/</guid>
+        
+        <category>ROS1</category>
+        
+        <category>Turtlebot2</category>
+        
+        <category>Startup</category>
+        
+        
+      </item>
+    
+      <item>
+        <title>【ROS总结】ROS故障排除</title>
+        <description>&lt;blockquote&gt;
+  &lt;p&gt;说明:&lt;br /&gt;&lt;br /&gt;
+本文首发于 &lt;a href=&quot;https://blog.csdn.net/u011118482/article/details/72852251&quot;&gt;CSDN&lt;/a&gt;，转载请保留链接。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h2 id=&quot;前言&quot;&gt;前言&lt;/h2&gt;
+
+&lt;p&gt;在ROS学习与开发中，难免遇到各种各样的问题，除了一些可以解决问题（语法问题）外，其他一些问题有时很难发现并解决，在这里，总结下在开发中遇到的各种问题，不定期更新中。。。&lt;/p&gt;
+
+&lt;p&gt;为了方便和管理，每一个标题都是一些问题模块，现在有catkin_make编译模块。&lt;/p&gt;
+
+&lt;h2 id=&quot;catkin_make问题&quot;&gt;catkin_make问题&lt;/h2&gt;
+
+&lt;p&gt;&lt;strong&gt;问题1&lt;/strong&gt;：在使用catkin_make过程中，明明有需要编译的包，但是系统提示找不到该路径，具体输出如下：&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;Traceback (most recent call last):
+  File &quot;/opt/ros/indigo/share/genjava/cmake/../../../lib/genjava/genjava_gradle_project.py&quot;, line 14, in &amp;lt;module&amp;gt;
+    genjava.main(sys.argv)
+  File &quot;/opt/ros/indigo/lib/python2.7/dist-packages/genjava/genjava_main.py&quot;, line 82, in main
+    gradle_project.create(args.package, args.output_dir)
+  File &quot;/opt/ros/indigo/lib/python2.7/dist-packages/genjava/gradle_project.py&quot;, line 152, in create
+    raise IOError(&quot;could not find %s on the ros package path&quot; % msg_pkg_name)
+IOError: could not find turtlebot2i_marker_manipulation on the ros package path
+make[2]: *** [turtlebot2i_marker_manipulation/java/turtlebot2i_marker_manipulation/build.gradle] Error 1
+make[1]: *** [turtlebot2i_marker_manipulation/CMakeFiles/turtlebot2i_marker_manipulation_generate_messages_java_gradle.dir/all] Error 2
+make[1]: *** Waiting for unfinished jobs....
+Traceback (most recent call last):
+  File &quot;/opt/ros/indigo/share/genjava/cmake/../../../lib/genjava/genjava_gradle_project.py&quot;, line 14, in &amp;lt;module&amp;gt;
+    genjava.main(sys.argv)
+  File &quot;/opt/ros/indigo/lib/python2.7/dist-packages/genjava/genjava_main.py&quot;, line 82, in main
+    gradle_project.create(args.package, args.output_dir)
+  File &quot;/opt/ros/indigo/lib/python2.7/dist-packages/genjava/gradle_project.py&quot;, line 152, in create
+    raise IOError(&quot;could not find %s on the ros package path&quot; % msg_pkg_name)
+IOError: could not find turtlebot2i_marker_manipulation on the ros package path
+
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;IOError: &lt;span style=&quot;color:red;&quot;&gt; could not find &lt;/span&gt; turtlebot2i_marker_manipulation &lt;span style=&quot;color:red;&quot;&gt;on the ros package path. &lt;/span&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;解决方案：&lt;/strong&gt;
+下载genjava就可以正常编译。原因不明。命令如下：&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ sudo apt-get remove ros-indigo-genjava 
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h2 id=&quot;moveit-问题&quot;&gt;Moveit! 问题&lt;/h2&gt;
+&lt;p&gt;&lt;strong&gt;问题1：&lt;/strong&gt; 当运行&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;roslaunch moveit_setup_assistant setup_assistant.launch
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;选择模型加载时，会突然系统崩溃。提示如下信息：&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;[rospack] Error: no package given
+[librospack]: error while executing command
+[ INFO] [1496720764.674712823]: Running 'rosrun xacro xacro.py /home/carl/Desktop/Project/turtlebot2i/src/turtlebot2i/turtlebot2i_description/robots/kobuki_interbotix_zr300.urdf.xacro'...
+[ INFO] [1496720765.546447152]: Loaded turtlebot robot model.
+[ INFO] [1496720765.546519891]: Setting Param Server with Robot Description
+[ INFO] [1496720765.555161202]: Robot semantic model successfully loaded.
+[ INFO] [1496720765.555195476]: Setting Param Server with Robot Semantic Description
+[ INFO] [1496720765.570819680]: Loading robot model 'turtlebot'...
+[ INFO] [1496720765.570888991]: No root/virtual joint specified in SRDF. Assuming fixed joint
+================================================================================REQUIRED process [moveit_setup_assistant-1] has died!
+process has died [pid 8123, exit code -11, cmd /opt/ros/indigo/lib/moveit_setup_assistant/moveit_setup_assistant __name:=moveit_setup_assistant __log:=/home/carl/.ros/log/689c9c26-4a64-11e7-8883-d85de2b5c407/moveit_setup_assistant-1.log].
+log file: /home/carl/.ros/log/689c9c26-4a64-11e7-8883-d85de2b5c407/moveit_setup_assistant-1*.log
+Initiating shutdown!
+================================================================================
+[moveit_setup_assistant-1] killing on exit
+shutting down processing monitor...
+... shutting down processing monitor complete
+done
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;说明：&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;单独加载模型没问题.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;使用moveit_setup加载其他模型有的没问题（例如，Turtlebot）。&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;只是使用有些模型会出现突然崩溃的情况。&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;&lt;strong&gt;解决方案：&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;方式1：&lt;/strong&gt;检查模型中模型的&lt;collision&gt;属性，里面的&lt;geometry&gt;是否加载的是.dae或.stl文件，如果有，将.dae或.stl替换成urdf本身自有的属性，例如&lt;cylinder&gt;，&lt;box&gt;等。
+举例：将&lt;/box&gt;&lt;/cylinder&gt;&lt;/geometry&gt;&lt;/collision&gt;&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;      &amp;lt;collision&amp;gt;
+        &amp;lt;origin xyz=&quot;0.0 0.0 0.0&quot; rpy=&quot;0 0 0&quot;/&amp;gt;
+        &amp;lt;geometry&amp;gt;
+          &amp;lt;mesh filename=&quot;package://turtlebot2i_description/meshes/sensors/sr300.stl&quot; scale=&quot;2.0 2.0 2.0&quot; /&amp;gt;
+        &amp;lt;/geometry&amp;gt;
+      &amp;lt;/collision&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;替换成&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;      &amp;lt;collision&amp;gt;
+        &amp;lt;origin xyz=&quot;0 0 0&quot; rpy=&quot;0 0 0&quot;/&amp;gt;
+        &amp;lt;geometry&amp;gt;
+          &amp;lt;cylinder length=&quot;0.006&quot; radius=&quot;0.170&quot;/&amp;gt;
+        &amp;lt;/geometry&amp;gt;
+      &amp;lt;/collision&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;strong&gt;方式2：&lt;/strong&gt;测试了下moveit_setup_assistant，发现模型加载mesh时，会出错，方式1是将现有属性替换，另外一种方式是改变自己制作的dae或stl文件名，不清楚什么原因，moveit_setup_assistant加载dae或stl时，模型名必须为小写，如果有大写出现就会报错，例如将Test_Finger.dae修改为test_finger.dae就不会造成崩溃。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;方式3：&lt;/strong&gt;如果是在加载别人做的dae或stl文件时，需要将dae或stl文件重写，我使用的是blender，将stl重新导出stl就不会造成崩溃。其他3D建模也可以尝试下，3D Max，solidworks，inventor等等。&lt;/p&gt;
+
+&lt;p&gt;其他解决方案如果有请告知。&lt;/p&gt;
+
+&lt;h2 id=&quot;ros_control--gazebo问题&quot;&gt;ROS_Control + Gazebo问题&lt;/h2&gt;
+&lt;p&gt;&lt;strong&gt;问题1：&lt;/strong&gt;使用ros_control为模型添加Gazebo接口时，模型单独显示没有问题，在Gazebo中添加会错误，从而导致加载不了ros_control接口，报错如下：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;[ERROR] [1497406213.064550049, 0.172000000]: No valid hardware interface element found in joint 'wheel_joint_fl'.
+[ERROR] [1497406213.064681421, 0.172000000]: Failed to load joints for transmission 'wheel_trans_fl'.
+[ERROR] [1497406213.064711210, 0.172000000]: No valid hardware interface element found in joint 'caster_joint_fl'.
+[ERROR] [1497406213.064765673, 0.172000000]: Failed to load joints for transmission 'caster_trans_fl'.
+[ERROR] [1497406213.064781965, 0.172000000]: No valid hardware interface element found in joint 'wheel_joint_fr'.
+[ERROR] [1497406213.064794358, 0.172000000]: Failed to load joints for transmission 'wheel_trans_fr'.
+[ERROR] [1497406213.064806668, 0.172000000]: No valid hardware interface element found in joint 'caster_joint_fr'.
+[ERROR] [1497406213.064815775, 0.172000000]: Failed to load joints for transmission 'caster_trans_fr'.
+[ERROR] [1497406213.064826099, 0.172000000]: No valid hardware interface element found in joint 'wheel_joint_bl'.
+[ERROR] [1497406213.064837826, 0.172000000]: Failed to load joints for transmission 'wheel_trans_bl'.
+[ERROR] [1497406213.064850074, 0.172000000]: No valid hardware interface element found in joint 'caster_joint_bl'.
+[ERROR] [1497406213.064861368, 0.172000000]: Failed to load joints for transmission 'caster_trans_bl'.
+[ERROR] [1497406213.064874445, 0.172000000]: No valid hardware interface element found in joint 'wheel_joint_br'.
+[ERROR] [1497406213.064884656, 0.172000000]: Failed to load joints for transmission 'wheel_trans_br'.
+[ERROR] [1497406213.064893785, 0.172000000]: No valid hardware interface element found in joint 'caster_joint_br'.
+[ERROR] [1497406213.064902338, 0.172000000]: Failed to load joints for transmission 'caster_trans_br'.
+[ERROR] [1497406213.064913362, 0.172000000]: No valid hardware interface element found in joint 'arm_joint_1'.
+[ERROR] [1497406213.064923217, 0.172000000]: Failed to load joints for transmission 'arm_trans_1'.
+[ERROR] [1497406213.064932655, 0.172000000]: No valid hardware interface element found in joint 'arm_joint_2'.
+[ERROR] [1497406213.064942810, 0.172000000]: Failed to load joints for transmission 'arm_trans_2'.
+[ERROR] [1497406213.064956180, 0.172000000]: No valid hardware interface element found in joint 'arm_joint_3'.
+[ERROR] [1497406213.064965970, 0.172000000]: Failed to load joints for transmission 'arm_trans_3'.
+[ERROR] [1497406213.064976051, 0.172000000]: No valid hardware interface element found in joint 'arm_joint_4'.
+[ERROR] [1497406213.064985608, 0.172000000]: Failed to load joints for transmission 'arm_trans_4'.
+[ERROR] [1497406213.064995977, 0.172000000]: No valid hardware interface element found in joint 'arm_joint_5'.
+[ERROR] [1497406213.065005730, 0.172000000]: Failed to load joints for transmission 'arm_trans_5'.
+[ERROR] [1497406213.065017694, 0.172000000]: No valid hardware interface element found in joint 'gripper_finger_joint_l'.
+[ERROR] [1497406213.065026496, 0.172000000]: Failed to load joints for transmission 'gripper_finger_l_trans'.
+[ERROR] [1497406213.065036557, 0.172000000]: No valid hardware interface element found in joint 'gripper_finger_joint_r'.
+[ERROR] [1497406213.065046327, 0.172000000]: Failed to load joints for transmission 'gripper_finger_r_trans'.
+
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;strong&gt;解决：&lt;/strong&gt;该问题原因是ros_control接口更新，有的旧的会不兼容，通过给&lt;joint&gt;选项添加&lt;hardwareinterface&gt;标签，这个错误会消失，比如，在rrbot.xacro文件中，改变：&lt;/hardwareinterface&gt;&lt;/joint&gt;&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&amp;lt;joint name=&quot;joint1&quot;/&amp;gt; 
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;为：&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&amp;lt;transmission name=&quot;tran1&quot;&amp;gt;
+  &amp;lt;type&amp;gt;transmission_interface/SimpleTransmission&amp;lt;/type&amp;gt;
+  &amp;lt;joint name=&quot;joint1&quot;&amp;gt;
+    &amp;lt;hardwareInterface&amp;gt;EffortJointInterface&amp;lt;/hardwareInterface&amp;gt;
+  &amp;lt;/joint&amp;gt;
+&amp;lt;/transmission&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+</description>
+        <pubDate>Sat, 03 Jun 2017 08:17:12 -0700</pubDate>
+        <link>http://localhost:4000/2017/06/03/ros-troubleshooting/</link>
+        <guid isPermaLink="true">http://localhost:4000/2017/06/03/ros-troubleshooting/</guid>
+        
+        <category>ROS1</category>
+        
+        <category>Troubleshooting</category>
+        
+        
+      </item>
+    
+      <item>
+        <title>【ROS总结】ROS故障排除</title>
+        <description>&lt;blockquote&gt;
+  &lt;p&gt;说明:&lt;br /&gt;&lt;br /&gt;
+本文首发于 &lt;a href=&quot;https://blog.csdn.net/u011118482/article/details/72852251&quot;&gt;CSDN&lt;/a&gt;，转载请保留链接。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h2 id=&quot;前言&quot;&gt;前言&lt;/h2&gt;
+
+&lt;p&gt;在ROS学习与开发中，难免遇到各种各样的问题，除了一些可以解决问题（语法问题）外，其他一些问题有时很难发现并解决，在这里，总结下在开发中遇到的各种问题，不定期更新中。。。&lt;/p&gt;
+
+&lt;p&gt;为了方便和管理，每一个标题都是一些问题模块，现在有catkin_make编译模块。&lt;/p&gt;
+
+&lt;h2 id=&quot;catkin_make问题&quot;&gt;catkin_make问题&lt;/h2&gt;
+
+&lt;p&gt;&lt;strong&gt;问题1&lt;/strong&gt;：在使用catkin_make过程中，明明有需要编译的包，但是系统提示找不到该路径，具体输出如下：&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;Traceback (most recent call last):
+  File &quot;/opt/ros/indigo/share/genjava/cmake/../../../lib/genjava/genjava_gradle_project.py&quot;, line 14, in &amp;lt;module&amp;gt;
+    genjava.main(sys.argv)
+  File &quot;/opt/ros/indigo/lib/python2.7/dist-packages/genjava/genjava_main.py&quot;, line 82, in main
+    gradle_project.create(args.package, args.output_dir)
+  File &quot;/opt/ros/indigo/lib/python2.7/dist-packages/genjava/gradle_project.py&quot;, line 152, in create
+    raise IOError(&quot;could not find %s on the ros package path&quot; % msg_pkg_name)
+IOError: could not find turtlebot2i_marker_manipulation on the ros package path
+make[2]: *** [turtlebot2i_marker_manipulation/java/turtlebot2i_marker_manipulation/build.gradle] Error 1
+make[1]: *** [turtlebot2i_marker_manipulation/CMakeFiles/turtlebot2i_marker_manipulation_generate_messages_java_gradle.dir/all] Error 2
+make[1]: *** Waiting for unfinished jobs....
+Traceback (most recent call last):
+  File &quot;/opt/ros/indigo/share/genjava/cmake/../../../lib/genjava/genjava_gradle_project.py&quot;, line 14, in &amp;lt;module&amp;gt;
+    genjava.main(sys.argv)
+  File &quot;/opt/ros/indigo/lib/python2.7/dist-packages/genjava/genjava_main.py&quot;, line 82, in main
+    gradle_project.create(args.package, args.output_dir)
+  File &quot;/opt/ros/indigo/lib/python2.7/dist-packages/genjava/gradle_project.py&quot;, line 152, in create
+    raise IOError(&quot;could not find %s on the ros package path&quot; % msg_pkg_name)
+IOError: could not find turtlebot2i_marker_manipulation on the ros package path
+
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;IOError: &lt;span style=&quot;color:red;&quot;&gt; could not find &lt;/span&gt; turtlebot2i_marker_manipulation &lt;span style=&quot;color:red;&quot;&gt;on the ros package path. &lt;/span&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;解决方案：&lt;/strong&gt;
+下载genjava就可以正常编译。原因不明。命令如下：&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ sudo apt-get remove ros-indigo-genjava 
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h2 id=&quot;moveit-问题&quot;&gt;Moveit! 问题&lt;/h2&gt;
+&lt;p&gt;&lt;strong&gt;问题1：&lt;/strong&gt; 当运行&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;roslaunch moveit_setup_assistant setup_assistant.launch
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;选择模型加载时，会突然系统崩溃。提示如下信息：&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;[rospack] Error: no package given
+[librospack]: error while executing command
+[ INFO] [1496720764.674712823]: Running 'rosrun xacro xacro.py /home/carl/Desktop/Project/turtlebot2i/src/turtlebot2i/turtlebot2i_description/robots/kobuki_interbotix_zr300.urdf.xacro'...
+[ INFO] [1496720765.546447152]: Loaded turtlebot robot model.
+[ INFO] [1496720765.546519891]: Setting Param Server with Robot Description
+[ INFO] [1496720765.555161202]: Robot semantic model successfully loaded.
+[ INFO] [1496720765.555195476]: Setting Param Server with Robot Semantic Description
+[ INFO] [1496720765.570819680]: Loading robot model 'turtlebot'...
+[ INFO] [1496720765.570888991]: No root/virtual joint specified in SRDF. Assuming fixed joint
+================================================================================REQUIRED process [moveit_setup_assistant-1] has died!
+process has died [pid 8123, exit code -11, cmd /opt/ros/indigo/lib/moveit_setup_assistant/moveit_setup_assistant __name:=moveit_setup_assistant __log:=/home/carl/.ros/log/689c9c26-4a64-11e7-8883-d85de2b5c407/moveit_setup_assistant-1.log].
+log file: /home/carl/.ros/log/689c9c26-4a64-11e7-8883-d85de2b5c407/moveit_setup_assistant-1*.log
+Initiating shutdown!
+================================================================================
+[moveit_setup_assistant-1] killing on exit
+shutting down processing monitor...
+... shutting down processing monitor complete
+done
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;说明：&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;单独加载模型没问题.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;使用moveit_setup加载其他模型有的没问题（例如，Turtlebot）。&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;只是使用有些模型会出现突然崩溃的情况。&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;&lt;strong&gt;解决方案：&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;方式1：&lt;/strong&gt;检查模型中模型的&lt;collision&gt;属性，里面的&lt;geometry&gt;是否加载的是.dae或.stl文件，如果有，将.dae或.stl替换成urdf本身自有的属性，例如&lt;cylinder&gt;，&lt;box&gt;等。
+举例：将&lt;/box&gt;&lt;/cylinder&gt;&lt;/geometry&gt;&lt;/collision&gt;&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;      &amp;lt;collision&amp;gt;
+        &amp;lt;origin xyz=&quot;0.0 0.0 0.0&quot; rpy=&quot;0 0 0&quot;/&amp;gt;
+        &amp;lt;geometry&amp;gt;
+          &amp;lt;mesh filename=&quot;package://turtlebot2i_description/meshes/sensors/sr300.stl&quot; scale=&quot;2.0 2.0 2.0&quot; /&amp;gt;
+        &amp;lt;/geometry&amp;gt;
+      &amp;lt;/collision&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;替换成&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;      &amp;lt;collision&amp;gt;
+        &amp;lt;origin xyz=&quot;0 0 0&quot; rpy=&quot;0 0 0&quot;/&amp;gt;
+        &amp;lt;geometry&amp;gt;
+          &amp;lt;cylinder length=&quot;0.006&quot; radius=&quot;0.170&quot;/&amp;gt;
+        &amp;lt;/geometry&amp;gt;
+      &amp;lt;/collision&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;strong&gt;方式2：&lt;/strong&gt;测试了下moveit_setup_assistant，发现模型加载mesh时，会出错，方式1是将现有属性替换，另外一种方式是改变自己制作的dae或stl文件名，不清楚什么原因，moveit_setup_assistant加载dae或stl时，模型名必须为小写，如果有大写出现就会报错，例如将Test_Finger.dae修改为test_finger.dae就不会造成崩溃。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;方式3：&lt;/strong&gt;如果是在加载别人做的dae或stl文件时，需要将dae或stl文件重写，我使用的是blender，将stl重新导出stl就不会造成崩溃。其他3D建模也可以尝试下，3D Max，solidworks，inventor等等。&lt;/p&gt;
+
+&lt;p&gt;其他解决方案如果有请告知。&lt;/p&gt;
+
+&lt;h2 id=&quot;ros_control--gazebo问题&quot;&gt;ROS_Control + Gazebo问题&lt;/h2&gt;
+&lt;p&gt;&lt;strong&gt;问题1：&lt;/strong&gt;使用ros_control为模型添加Gazebo接口时，模型单独显示没有问题，在Gazebo中添加会错误，从而导致加载不了ros_control接口，报错如下：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;[ERROR] [1497406213.064550049, 0.172000000]: No valid hardware interface element found in joint 'wheel_joint_fl'.
+[ERROR] [1497406213.064681421, 0.172000000]: Failed to load joints for transmission 'wheel_trans_fl'.
+[ERROR] [1497406213.064711210, 0.172000000]: No valid hardware interface element found in joint 'caster_joint_fl'.
+[ERROR] [1497406213.064765673, 0.172000000]: Failed to load joints for transmission 'caster_trans_fl'.
+[ERROR] [1497406213.064781965, 0.172000000]: No valid hardware interface element found in joint 'wheel_joint_fr'.
+[ERROR] [1497406213.064794358, 0.172000000]: Failed to load joints for transmission 'wheel_trans_fr'.
+[ERROR] [1497406213.064806668, 0.172000000]: No valid hardware interface element found in joint 'caster_joint_fr'.
+[ERROR] [1497406213.064815775, 0.172000000]: Failed to load joints for transmission 'caster_trans_fr'.
+[ERROR] [1497406213.064826099, 0.172000000]: No valid hardware interface element found in joint 'wheel_joint_bl'.
+[ERROR] [1497406213.064837826, 0.172000000]: Failed to load joints for transmission 'wheel_trans_bl'.
+[ERROR] [1497406213.064850074, 0.172000000]: No valid hardware interface element found in joint 'caster_joint_bl'.
+[ERROR] [1497406213.064861368, 0.172000000]: Failed to load joints for transmission 'caster_trans_bl'.
+[ERROR] [1497406213.064874445, 0.172000000]: No valid hardware interface element found in joint 'wheel_joint_br'.
+[ERROR] [1497406213.064884656, 0.172000000]: Failed to load joints for transmission 'wheel_trans_br'.
+[ERROR] [1497406213.064893785, 0.172000000]: No valid hardware interface element found in joint 'caster_joint_br'.
+[ERROR] [1497406213.064902338, 0.172000000]: Failed to load joints for transmission 'caster_trans_br'.
+[ERROR] [1497406213.064913362, 0.172000000]: No valid hardware interface element found in joint 'arm_joint_1'.
+[ERROR] [1497406213.064923217, 0.172000000]: Failed to load joints for transmission 'arm_trans_1'.
+[ERROR] [1497406213.064932655, 0.172000000]: No valid hardware interface element found in joint 'arm_joint_2'.
+[ERROR] [1497406213.064942810, 0.172000000]: Failed to load joints for transmission 'arm_trans_2'.
+[ERROR] [1497406213.064956180, 0.172000000]: No valid hardware interface element found in joint 'arm_joint_3'.
+[ERROR] [1497406213.064965970, 0.172000000]: Failed to load joints for transmission 'arm_trans_3'.
+[ERROR] [1497406213.064976051, 0.172000000]: No valid hardware interface element found in joint 'arm_joint_4'.
+[ERROR] [1497406213.064985608, 0.172000000]: Failed to load joints for transmission 'arm_trans_4'.
+[ERROR] [1497406213.064995977, 0.172000000]: No valid hardware interface element found in joint 'arm_joint_5'.
+[ERROR] [1497406213.065005730, 0.172000000]: Failed to load joints for transmission 'arm_trans_5'.
+[ERROR] [1497406213.065017694, 0.172000000]: No valid hardware interface element found in joint 'gripper_finger_joint_l'.
+[ERROR] [1497406213.065026496, 0.172000000]: Failed to load joints for transmission 'gripper_finger_l_trans'.
+[ERROR] [1497406213.065036557, 0.172000000]: No valid hardware interface element found in joint 'gripper_finger_joint_r'.
+[ERROR] [1497406213.065046327, 0.172000000]: Failed to load joints for transmission 'gripper_finger_r_trans'.
+
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;strong&gt;解决：&lt;/strong&gt;该问题原因是ros_control接口更新，有的旧的会不兼容，通过给&lt;joint&gt;选项添加&lt;hardwareinterface&gt;标签，这个错误会消失，比如，在rrbot.xacro文件中，改变：&lt;/hardwareinterface&gt;&lt;/joint&gt;&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&amp;lt;joint name=&quot;joint1&quot;/&amp;gt; 
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;为：&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&amp;lt;transmission name=&quot;tran1&quot;&amp;gt;
+  &amp;lt;type&amp;gt;transmission_interface/SimpleTransmission&amp;lt;/type&amp;gt;
+  &amp;lt;joint name=&quot;joint1&quot;&amp;gt;
+    &amp;lt;hardwareInterface&amp;gt;EffortJointInterface&amp;lt;/hardwareInterface&amp;gt;
+  &amp;lt;/joint&amp;gt;
+&amp;lt;/transmission&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+</description>
+        <pubDate>Sat, 03 Jun 2017 08:17:12 -0700</pubDate>
+        <link>http://localhost:4000/2017/06/03/ros-interface-odometry/</link>
+        <guid isPermaLink="true">http://localhost:4000/2017/06/03/ros-interface-odometry/</guid>
+        
+        <category>ROS1</category>
+        
+        <category>Troubleshooting</category>
+        
+        
+      </item>
+    
+      <item>
+        <title>【ROS总结】ROS下的百度语音识别应用</title>
+        <description>&lt;blockquote&gt;
+  &lt;p&gt;说明:&lt;br /&gt;&lt;br /&gt;
+本文首发于 &lt;a href=&quot;https://blog.csdn.net/u011118482/article/details/55001444&quot;&gt;CSDN&lt;/a&gt;，转载请保留链接。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h2 id=&quot;前言&quot;&gt;前言&lt;/h2&gt;
+
+&lt;p&gt;今天闲来无事查看下语音识别在ROS中的应用，之前在ROS中玩过一段时间的Pocket Sphinx，关于Pocket Sphinx的学习过程以后会介绍，或者可以去网上搜索一些教程，都是比较不错的。现在讲述下在ROS中百度语音的使用情况，由于百度语音的作者写了一些文章在Github上，但是步骤不是很清楚，在此记录一下防止以后忘记，也和大家分享下，避免出现一些失误而导致半途而废。&lt;/p&gt;
+
+&lt;p&gt;需求:&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;软件&lt;/th&gt;
+      &lt;th&gt;版本&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;操作系统&lt;/td&gt;
+      &lt;td&gt;Ubuntu 14.04.2&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ROS版本&lt;/td&gt;
+      &lt;td&gt;Indigo&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;h2 id=&quot;ros语音识别介绍&quot;&gt;ROS语音识别介绍&lt;/h2&gt;
+&lt;p&gt;关于一些在ROS中如何使用语音识别库，大家可以自行搜索下，基本上都是在ROS官网上的一些资料，目前官网上的&lt;a href=&quot;http://wiki.ros.org/Sensors&quot;&gt;语音识别库&lt;/a&gt;一共有四个，分别为&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;a href=&quot;http://wiki.ros.org/baidu_speech&quot;&gt;baidu_speech&lt;/a&gt;&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;a href=&quot;http://wiki.ros.org/hark&quot;&gt;hark&lt;/a&gt;&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;a href=&quot;http://wiki.ros.org/pocketsphinx&quot;&gt;pocketsphinx&lt;/a&gt;&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;a href=&quot;http://wiki.ros.org/rospeex&quot;&gt;rospeex&lt;/a&gt;&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;目前讲述的是百度的语音识别，目前百度语音已经支持ROS，大家可以学习下。以后会介绍其他三个语音库。&lt;/p&gt;
+
+&lt;h3 id=&quot;百度语音识别在ros中的应用&quot;&gt;百度语音识别在ROS中的应用&lt;/h3&gt;
+&lt;p&gt;关于如何在ROS中使用百度语音识别呢，作者也已经在wiki上介绍了，大家可以先查看下，网址是：http://wiki.ros.org/baidu_speech&lt;/p&gt;
+
+&lt;p&gt;不过作者貌似没有提供在线安装，也就是apt-get来安装百度语音包，不过不妨碍今天的教程，安装百度语音包的过程如下：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;在Github上下载百度语音包&lt;/li&gt;
+  &lt;li&gt;安装百度语音包的需求包&lt;/li&gt;
+  &lt;li&gt;运行并测试百度语音包中的说话者（simple_speaker.launch）和语音识别（simple_voice.launch）&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;下面根据步骤来进行操作&lt;/p&gt;
+
+&lt;h4 id=&quot;在github上下载百度语音识别包&quot;&gt;在Github上下载百度语音识别包&lt;/h4&gt;
+&lt;p&gt;在下载之前，你应该有一个catkin工作空间，我的工作空间名字就是catkin_ws。然后在catkin_ws/src下下载百度语音识别包（simple_voice）&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ git clone https://github.com/DinnerHowe/simple_voice.git
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;下载完成后其实就可以使用，但是会提示错误，例如：No module named pyaudio 或者 Nomodule named vlc&lt;/p&gt;
+
+&lt;p&gt;其实作者也已经说过了，要想使用simple_voice这个包，需要Python库，也就是pyaudio和vlc-python。下面安装需求包。&lt;/p&gt;
+
+&lt;h4 id=&quot;安装百度语音识别包的需求包&quot;&gt;安装百度语音识别包的需求包&lt;/h4&gt;
+
+&lt;p&gt;安装pyaudio其实是比较简单的，直接使用下面的命令就可以安装：&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt; $ sudo apt-get install python-pyaudio
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;这个步骤直接就在线安装了需求包pyaudio。&lt;/p&gt;
+
+&lt;p&gt;安装vlc其实比较坑，或许是我的电脑的问题，没有找到在线安装命令也就是python-vlc这个包，就算安装了vlc所有的包也还是提示No module named vlc。&lt;/p&gt;
+
+&lt;p&gt;不过最终还是解决了，使用如下方式，首先在你的home下，下载vlc的封装库：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ cd  
+$ git clone https://github.com/geoffsalmon/vlc-python.git
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;下载完成后，使用如下命令加载vlc模型到Python中&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ sudo cp vlc-python/generated/vlc.py /usr/lib/python2.7/
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;Indigo的Python是2.7版本，大家也可以替换成你当前版本，路径还是/usr/lib。
+添加完成需求包后，就可以测试运行百度语音识别包了。&lt;/p&gt;
+
+&lt;h4 id=&quot;运行并测试百度语音包中的说话者simple_speakerlaunch和语音识别simple_voicelaunch&quot;&gt;运行并测试百度语音包中的说话者（simple_speaker.launch）和语音识别（simple_voice.launch）&lt;/h4&gt;
+
+&lt;h5 id=&quot;测试simple_speakerlaunch&quot;&gt;测试simple_speaker.launch&lt;/h5&gt;
+
+&lt;p&gt;首先打开一个终端，输入如下命令来启动simple_speaker.launch&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ roslaunch simple_voice simple_speaker.launch
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;作者在网上说直接运行这个launch就可以听到说话，其实还少一步，需要添加音频文件才可以。作者在语音包中给出了一个“请让一下.mp3”，其他音频文件没有测试，大家可以测试下都支持什么音频文件，在此就不讲述了。&lt;/p&gt;
+
+&lt;p&gt;运行完simple_speaker.launch后，多出了一个/speak_string的话题，该话题就是接收音频文件，需要手动的添加音频文件到simple_speaker节点，其中该launch文件只开启了一个节点就是simple_speaker。&lt;/p&gt;
+
+&lt;p&gt;打开另一个终端，向simple_speaker节点添加音频文件：&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ roscd simple_voice/src  
+$ rostopic pub /speak_string std_msgs/String -- '请让一下.mp3' 
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h5 id=&quot;测试simple_voicelaunch&quot;&gt;测试simple_voice.launch&lt;/h5&gt;
+&lt;p&gt;关于测试simple_voice.launch是容易的，直接一条命令搞定：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ roslaunch simple_voice simple_voice.launch
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;然后对着电脑说话就可以了，比如:
+&lt;img src=&quot;/img/in-post/ros-baidu-speech/baidu_speech_output.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;每次只识别一次，识别完成后需要桥下Enter键才能继续识别，当然大家也可以对voice_node.py进行改造，变成实时语音识别。&lt;/p&gt;
+
+</description>
+        <pubDate>Sun, 12 Feb 2017 07:01:25 -0800</pubDate>
+        <link>http://localhost:4000/2017/02/12/ros-baidu-speech/</link>
+        <guid isPermaLink="true">http://localhost:4000/2017/02/12/ros-baidu-speech/</guid>
+        
+        <category>ROS1</category>
+        
+        <category>Baidu Speech</category>
         
         
       </item>

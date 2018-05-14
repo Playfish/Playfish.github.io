@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="google-site-verification" content="xBT4GhYoi5qRD5tr338pgPM5OWHHIDR6mNg1a3euekI" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="关于个人成长历程、ROS设计 | Carl Zhang，About personal growth, ROS designer. | 这里是 @Playfish 的个人博客，与你一起发现更大的世界。">
+    <meta name="keywords"  content="张世伟, CarlZHang, Playfish, @Playfish, 张世伟的博客, ROS, 博客, 个人网站">
+    <meta name="theme-color" content="#000000">
+    
+    <title>【ROS总结】Turtlebot ROS 开机自启动设置(2) - Playfish的博客 | Carl Zhang Blog</title>
+
+    <!-- Web App Manifest -->
+    <link rel="manifest" href="/pwa/manifest.json">
+
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="/img/favicon.ico">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="http://localhost:4000/2017/08/01/turtlebot-startup-2/">
+
+    <!-- Bootstrap Core CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+
+    <!-- Pygments Github CSS -->
+    <link rel="stylesheet" href="/css/syntax.css">
+
+    <!-- Custom Fonts -->
+    <!-- <link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
+    <!-- Hux change font-awesome CDN to qiniu -->
+    <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+
+    <!-- Hux Delete, sad but pending in China
+    <link href='http://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/
+    css'>
+    -->
+
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- ga & ba script hoook -->
+    <script></script>
+</head>
+
+
+<!-- hack iOS CSS :active style -->
+<body ontouchstart="">
+
+    <!-- Navigation -->
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Playfish Blog</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">Home</a>
+                    </li>
+                    
+                    <li>
+                        <a href="/about/">About</a>
+                    </li>
+                    
+                    <li>
+                        <a href="/portfolio/">Portfolio</a>
+                    </li>
+                    
+                    <li>
+                        <a href="/tags/">Tags</a>
+                    </li>
+                    
+                </ul>
+            </div>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container -->
+</nav>
+<script>
+    // Drop Bootstarp low-performance Navbar
+    // Use customize navbar with high-quality material design animation
+    // in high-perf jank-free CSS3 implementation
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    var __HuxNav__ = {
+        close: function(){
+            $navbar.className = " ";
+            // wait until animation end.
+            setTimeout(function(){
+                // prevent frequently toggle
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        },
+        open: function(){
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+
+    // Bind Event
+    $toggle.addEventListener('click', function(e){
+        if ($navbar.className.indexOf('in') > 0) {
+            __HuxNav__.close()
+        }else{
+            __HuxNav__.open()
+        }
+    })
+
+    /**
+     * Since Fastclick is used to delegate 'touchstart' globally
+     * to hack 300ms delay in iOS by performing a fake 'click',
+     * Using 'e.stopPropagation' to stop 'touchstart' event from 
+     * $toggle/$collapse will break global delegation.
+     * 
+     * Instead, we use a 'e.target' filter to prevent handler
+     * added to document close HuxNav.  
+     *
+     * Also, we use 'click' instead of 'touchstart' as compromise
+     */
+    document.addEventListener('click', function(e){
+        if(e.target == $toggle) return;
+        if(e.target.className == 'icon-bar') return;
+        __HuxNav__.close();
+    })
+</script>
+
+
+    <!-- Image to hack wechat -->
+<!-- <img src="/img/icon_wechat.png" width="0" height="0"> -->
+<!-- <img src="/img/in-post/turtlebot-startup-setting-2/turtlebot2.jpeg" width="0" height="0"> -->
+
+<!-- Post Header -->
+<style type="text/css">
+    header.intro-header{
+        position: relative;
+        background-image: url('/img/in-post/turtlebot-startup-setting-2/turtlebot2.jpeg')
+    }
+
+    
+    header.intro-header .header-mask{
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        background: rgba(0,0,0, 0.3);
+    }
+    
+</style>
+<header class="intro-header" >
+    <div class="header-mask"></div>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                        <a class="tag" href="/tags/#ROS1" title="ROS1">ROS1</a>
+                        
+                        <a class="tag" href="/tags/#Turtlebot2" title="Turtlebot2">Turtlebot2</a>
+                        
+                        <a class="tag" href="/tags/#Startup" title="Startup">Startup</a>
+                        
+                    </div>
+                    <h1>【ROS总结】Turtlebot ROS 开机自启动设置(2)</h1>
+                    
+                    
+                    <h2 class="subheading">Turtlebot ROS startup Settings (2)</h2>
+                    
+                    <span class="meta">Posted by Playfish on August 1, 2017</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Post Content -->
+<article>
+    <div class="container">
+        <div class="row">
+
+    <!-- Post Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+				<blockquote>
+  <p>说明:<br /><br />
+本文首发于 <a href="https://blog.csdn.net/u011118482/article/details/76549144">CSDN</a>，转载请保留链接。</p>
+</blockquote>
+
+<h2 id="前言">前言</h2>
+
+<p>之前写过一篇<a href="https://blog.csdn.net/u011118482/article/details/52437927">Turtlebot下的开机自启动设置</a>，这几天由于项目原因重新整理下，虽然已经有过先例，但是还是碰到了不少错误(keng)，前一篇写的是rc.local方式写入制成自启动脚本，现在换一种方式，改用启动内置控制台终端tty形式作为自启动设置，适用于桌面。</p>
+
+<p>开机启动方式很多，不唯一，我所知道的是：</p>
+
+<ul>
+  <li>rc.local开启启动</li>
+  <li>linux内置服务启动，包括上一篇的ROS的upstart包。</li>
+  <li>内置控制台终端启动tty</li>
+  <li>开机界面后启动终端，例如Startup Application.等等</li>
+</ul>
+
+<p>下面以项目为例讲述开机启动，rc.local就不在赘述了，目前两个功能进行实现，一种是开启自启动地图创建程序，另一种是开机自启动跟随脚本，两个脚本还是和之前一样，所有的节点全部都在一个脚本中。</p>
+
+<p>原本觉得很容易，结果很悲剧的我想当然了，尤其是地图创建程序，涉及到两台电脑通信，如果把两个脚本（minimal和gmapping_demo）合并的话，就可以发现，程序挂起成功，在进程中可以看到，但是，没法用另外一台电脑查看，也就是说，另一台电脑和turtlebot上电脑没有master通信，不用怀疑，ROS的系统变量是正确的，并且两台电脑是同一网段，就是没有办法用另一台电脑使用rosnode list来查看turtlebot上电脑的节点。如果有知道原因的还请告知，个人理解应该是gmapping的代码导致master外部通信阻塞缘故。</p>
+
+<p>好，言归正转，地图创建自启动程序分开运行，原因如上，也就是说分别开两个终端运行minimal和gmapping。如下</p>
+
+<h2 id="内置控制台终端tty自启动">内置控制台终端tty自启动</h2>
+
+<p>这个方式只对gmapping使用就可以了，其他都是正常的，因为没有把脚本分开，所以使用两个tty控制台。</p>
+
+<p>首先打开终端，输入如下命令：</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$  sudo vi /etc/init/tty1.config 
+</code></pre></div></div>
+
+<p>整个文件如下，修改部分请对照好。</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    # tty1 - getty  
+    #  
+    # This service maintains a getty on tty1 from the point the system is  
+    # started until it is shut down again.  
+      
+    start on stopped rc RUNLEVEL=[2345] and (  
+                not-container or  
+                container CONTAINER=lxc or  
+                container CONTAINER=lxc-libvirt)  
+      
+    stop on runlevel [!2345]  
+      
+    respawn  
+    exec /sbin/getty -8 38400 tty1  
+    exec /sbin/mingetty --autologin ubuntu tty1  
+
+</code></pre></div></div>
+<p>同样的保存退出后，修改另一个终端，输入如下命令：</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$  sudo vi /etc/init/tty2.config 
+</code></pre></div></div>
+<p>内容如下：</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code># tty2 - getty  
+#  
+# This service maintains a getty on tty2 from the point the system is  
+# started until it is shut down again.  
+  
+start on runlevel [23] and (  
+            not-container or  
+            container CONTAINER=lxc or  
+            container CONTAINER=lxc-libvirt)  
+  
+stop on runlevel [!23]  
+  
+respawn  
+exec /sbin/getty -8 38400 tty2  
+exec /sbin/mingetty --autologin ubuntu tty2
+</code></pre></div></div>
+
+<p>随后修改登陆命令，改成不需要密码登陆，输入</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$  sudo vi /etc/sudoers 
+</code></pre></div></div>
+
+<p>全部文本如下：</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>#  
+# This file MUST be edited with the 'visudo' command as root.  
+#  
+# Please consider adding local content in /etc/sudoers.d/ instead of  
+# directly modifying this file.  
+#  
+# See the man page for details on how to write a sudoers file.  
+#  
+Defaults        env_reset  
+Defaults        mail_badpass  
+Defaults        secure_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin"  
+  
+# Host alias specification  
+  
+# User alias specification  
+  
+# Cmnd alias specification  
+  
+# User privilege specification  
+root    ALL=(ALL:ALL) ALL  
+  
+# Members of the admin group may gain root privileges  
+%admin ALL=(ALL) ALL  
+  
+# Allow members of group sudo to execute any command  
+%sudo   ALL=(ALL:ALL) ALL  
+  
+# See sudoers(5) for more information on "#include" directives:  
+  
+#includedir /etc/sudoers.d  
+  
+ubuntu ALL=NOPASSWD:ALL
+</code></pre></div></div>
+
+<p>最后修改~/.bashrc文件，在最后添加：</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$  gedit ~/.bashrc
+</code></pre></div></div>
+
+<p>添加：</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    ##auto start  
+        Terminal=`tty`  
+        case $Terminal in  
+            "/dev/tty1") roslaunch turtlebot_bringup minimal.launch;;  #在tty1 启动minimal  
+            "/dev/tty2") sleep 10;roslaunch turtlebot_navigation gmapping_demo.launch;;  #等待10秒后，在tty2启动地图创建  
+        esac  
+</code></pre></div></div>
+
+<h2 id="测试">测试</h2>
+
+<p>在开始测试之前，首先确保你的bashrc文件中，修改正确了ROS_HOSTNAME和ROS_IP以及ROS_MASTER_URI的值，并且和另一台测试电脑在同一网段。</p>
+
+<p>turtlebot电脑运行成功提示，假设当前ip为192.168.0.100，另一台测试电脑ip为192.168.0.101，配置如下：</p>
+
+<p>turtlebot电脑的.bashrc中，应该有</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    export ROS_HOSTNAME=192.168.0.100  
+    export ROS_IP=192.168.0.100  
+    export ROS_MASTER_URI=http://192.168.0.100:11311
+</code></pre></div></div>
+
+<p>测试电脑.bashrc，也应该有</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>export ROS_HOSTNAME=192.168.0.101  
+export ROS_IP=192.168.0.101  
+export ROS_MASTER_URI=http://192.168.0.100:11311 
+</code></pre></div></div>
+
+<p>重新启动turtlebot电脑，等待完成后，使用另一台电脑测试，运行</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>roslaunch turtlebot_rviz_launchers view_navigation.launch
+</code></pre></div></div>
+
+<p>就可以在viz中看到当前地图创建情况，控制运行：</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    roslaunch turtlebot_teleop keyboard_teleop.launch
+</code></pre></div></div>
+<p>地图创建自启动完成。</p>
+
+<h2 id="其他方式自启动">其他方式自启动</h2>
+
+<h3 id="startup-applications">Startup Applications</h3>
+<p>只讲述linux应用设置，关于ROS包，教程太多就不说了，最简单的自启动方式就是在桌面上，按下“开始”键位，在弹出的搜索框中输入“Startup Applications”，应用弹出后，选择Add，然后在command行中输入：/usr/bin/gnome-terminal -x /home/ubuntu/aotu_runing/minimal_follower.sh即可。</p>
+
+<p>minimal_follower.sh内容如下:</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">#! /bin/bash</span>
+<span class="k">if </span><span class="nb">test</span> <span class="nt">-z</span> <span class="s2">"</span><span class="nv">$DBUS_SESSION_BUS_ADDRESS</span><span class="s2">"</span> <span class="p">;</span> <span class="k">then</span>
+      <span class="c">## if not found, launch a new one</span>
+      <span class="nb">eval</span> <span class="sb">`</span>dbus-launch <span class="nt">--sh-syntax</span> <span class="nt">--exit-with-session</span><span class="sb">`</span>
+      <span class="nb">echo</span> <span class="s2">"D-Bus per-session daemon address is: </span><span class="nv">$DBUS_SESSION_BUS_ADDRESS</span><span class="s2">"</span>
+<span class="k">fi
+</span><span class="nv">d</span><span class="o">=</span><span class="s2">"</span><span class="k">$(</span>date +%Y%m%d-%H:%M:%S<span class="k">)</span><span class="s2">"</span>
+<span class="nb">echo</span> <span class="s2">"[</span><span class="nv">$d</span><span class="s2">]:source opt "</span> <span class="o">&gt;</span> /home/<span class="nv">$USER</span>/aotu_runing/print_log.txt
+
+<span class="nb">source</span> /opt/ros/indigo/setup.bash
+<span class="nb">echo</span> <span class="s2">"[</span><span class="nv">$d</span><span class="s2">]:source bashrc "</span> <span class="o">&gt;&gt;</span> /home/<span class="nv">$USER</span>/aotu_runing/print_log.txt
+
+<span class="nb">source</span> /home/ubuntu/.bashrc
+<span class="nb">echo</span> <span class="s2">"[</span><span class="nv">$d</span><span class="s2">]:source catkin_ws "</span> <span class="o">&gt;&gt;</span> /home/<span class="nv">$USER</span>/aotu_runing/print_log.txt
+
+<span class="nb">source</span> /home/<span class="nv">$USER</span>/catkin_ws/devel/setup.bash
+
+<span class="nb">export </span><span class="nv">TURTLEBOT_BASE</span><span class="o">=</span>kobuki
+<span class="nb">export </span><span class="nv">TURTLEBOT_3D_SENSOR</span><span class="o">=</span>astra
+<span class="nb">export </span><span class="nv">ROS_HOSTNAME</span><span class="o">=</span>localhost
+<span class="nb">export </span><span class="nv">ROS_MASTER_URI</span><span class="o">=</span>http://localhost:1311
+<span class="nb">echo</span> <span class="s2">"[</span><span class="nv">$d</span><span class="s2">]:source catkin_ws again "</span> <span class="o">&gt;&gt;</span> /home/<span class="nv">$USER</span>/aotu_runing/print_log.txt
+
+<span class="nb">source</span> /home/<span class="nv">$USER</span>/catkin_ws/devel/setup.bash
+<span class="nb">echo</span> <span class="s2">"[</span><span class="nv">$d</span><span class="s2">]:minimal runing "</span> <span class="o">&gt;</span> /home/<span class="nv">$USER</span>/aotu_runing/print_log.txt
+roslaunch roch_bringup minimal_follower.launch  <span class="o">&gt;&gt;</span>  /home/<span class="nv">$USER</span>/aotu_runing/print_log.txt
+<span class="nb">echo</span> <span class="s2">"[</span><span class="nv">$d</span><span class="s2">]:minimal runing successfully. "</span> <span class="o">&gt;&gt;</span> /home/<span class="nv">$USER</span>/aotu_runing/print_log.txt
+
+</code></pre></div></div>
+
+<p>最终这个脚本启动的是turtlebot_bringup下的 minimal_follower.launch，minimal_follower.launch内容如下：</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;launch&gt;
+  &lt;!-- TURTLEBOT Configure --&gt;
+  &lt;arg name="base"                      default="$(env TURTLEBOT_BASE)"                              doc="mobile base type [TURTLEBOT]"/&gt;
+  &lt;arg name="stacks"                    default="$(env TURTLEBOT_STACKS)"                    doc="stack type displayed in visualisation/simulation [standard]"/&gt;
+  &lt;arg name="3d_sensor"                 default="$(env TURTLEBOT_3D_SENSOR)"                 doc="3d sensor types [kinect, asus_xtion_pro, r200]"/&gt;
+  &lt;arg name="serialport"                default="$(env TURTLEBOT_SERIAL_PORT)"               doc="used by create to configure the port it is connected on [/dev/ttyUSB0, /dev/ttyS0]"/&gt;
+  &lt;arg name="simulation"        default="$(env TURTLEBOT_SIMULATION)"                doc="set flags to indicate this turtle is run in simulation mode."/&gt;
+  &lt;arg name="robot_name"        default="$(env TURTLEBOT_NAME)"                      doc="used as a unique identifier and occasionally to preconfigure root namespaces, gateway/zeroconf ids etc."/&gt;
+  &lt;arg name="robot_type"        default="$(env TURTLEBOT_TYPE)"                      doc="just in case you are considering a 'variant' and want to make use of this."/&gt;
+
+
+  &lt;param name ="/use_sim_time" value="$(arg simulation)"/&gt;
+
+  &lt;!-- Load robot model --&gt;
+  &lt;include file="$(find turtlebot_bringup)/launch/includes/robot.launch.xml"&gt;
+    &lt;arg name="base" value="$(arg base)" /&gt;
+    &lt;arg name="stacks" value="$(arg stacks)" /&gt;
+    &lt;arg name="3d_sensor" value="$(arg 3d_sensor)" /&gt;
+  &lt;/include&gt;
+
+  &lt;!-- Load robot base--&gt;
+  &lt;include file="$(find turtlebot_bringup)/launch/includes/mobile_base.launch.xml"&gt;
+    &lt;arg name="base" value="$(arg base)" /&gt;
+    &lt;arg name="serialport" value="$(arg serialport)" /&gt;
+  &lt;/include&gt;
+
+ &lt;group unless="$(arg simulation)"&gt; &lt;!-- Real robot --&gt;
+    &lt;include file="$(find turtlebot_follower)/launch/includes/velocity_smoother.launch.xml"&gt;
+      &lt;arg name="nodelet_manager"  value="/mobile_base_nodelet_manager"/&gt;
+      &lt;arg name="navigation_topic" value="twist_mux/input/navi"/&gt;
+    &lt;/include&gt;
+
+    &lt;include file="$(find turtlebot_bringup)/launch/sensor.launch"&gt;
+      &lt;arg name="rgb_processing"                  value="true"/&gt;  &lt;!-- only required if we use android client --&gt;
+      &lt;arg name="depth_processing"                value="true"/&gt;
+      &lt;arg name="depth_registered_processing"     value="false"/&gt;
+      &lt;arg name="depth_registration"              value="false"/&gt;
+      &lt;arg name="disparity_processing"            value="false"/&gt;
+      &lt;arg name="disparity_registered_processing" value="false"/&gt;
+    &lt;/include&gt;
+  &lt;/group&gt;
+  &lt;group if="$(arg simulation)"&gt;
+    &lt;!-- Load nodelet manager for compatibility --&gt;
+    &lt;node pkg="nodelet" type="nodelet" ns="camera" name="camera_nodelet_manager" args="manager"/&gt;
+
+    &lt;include file="$(find turtlebot_follower)/launch/includes/velocity_smoother.launch.xml"&gt;
+      &lt;arg name="nodelet_manager"  value="camera/camera_nodelet_manager"/&gt;
+      &lt;arg name="navigation_topic" value="/twist/input/navi"/&gt;
+    &lt;/include&gt;
+  &lt;/group&gt;
+
+  &lt;param name="camera/rgb/image_color/compressed/jpeg_quality" value="22"/&gt;
+
+  &lt;!-- Make a slower camera feed available; only required if we use android client --&gt;
+  &lt;node pkg="topic_tools" type="throttle" name="camera_throttle"
+        args="messages camera/rgb/image_color/compressed 5"/&gt;
+
+
+  &lt;!--  Real robot: Load turtlebot follower into the  sensors nodelet manager to avoid pointcloud serializing --&gt;
+  &lt;!--  Simulation: Load turtlebot follower into nodelet manager for compatibility --&gt;
+  &lt;node pkg="nodelet" type="nodelet" name="turtlebot_follower"
+        args="load turtlebot_follower/TurtlebotFollower camera/camera_nodelet_manager"&gt;
+    &lt;remap from="turtlebot_follower/cmd_vel" to="follower_velocity_smoother/raw_cmd_vel"/&gt;
+    &lt;remap from="depth/points" to="camera/depth/points"/&gt;
+    &lt;remap from="depth/image_rect" to="/camera/depth/image_rect"/&gt;
+    &lt;param name="enabled" value="true" /&gt;
+    &lt;param name="x_scale" value="7.0" /&gt;
+    &lt;param name="z_scale" value="2.0" /&gt;
+    &lt;param name="min_x" value="-0.35" /&gt;
+    &lt;param name="max_x" value="0.35" /&gt;
+    &lt;param name="min_y" value="0.1" /&gt;
+    &lt;param name="max_y" value="0.5" /&gt;
+    &lt;param name="max_z" value="1.2" /&gt;
+    &lt;param name="goal_z" value="0.6" /&gt;
+  &lt;/node&gt;
+  &lt;!-- Launch the script which will toggle turtlebot following on and off based on a joystick button. default: on --&gt;
+  &lt;node name="switch" pkg="turtlebot_follower" type="switch.py"/&gt;
+&lt;/launch&gt;
+                                                                                          
+</code></pre></div></div>
+<p>使用桌面程序弊端在于修改的话需要重新连接显示屏，比较麻烦，不过不长改。</p>
+
+<p>注意：$USER千万不要用在/etc/rc.local下，否则会造成rc.local自启动不成功，没有反应，这一点坑了我很长时间。</p>
+
+<p>如果启动后，无法跟随，说明astra没有启动成功，可以在/var/log/apport.log中看到输出消息，解决办法就是在脚本中添加：</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    if test -z "$DBUS_SESSION_BUS_ADDRESS" ; then  
+          ## if not found, launch a new one  
+          eval `dbus-launch --sh-syntax --exit-with-session`  
+          echo "D-Bus per-session daemon address is: $DBUS_SESSION_BUS_ADDRESS"  
+    fi  
+</code></pre></div></div>
+<p>就可以。</p>
+
+<h3 id="robot_upstart-网络">robot_upstart 网络</h3>
+<h4 id="配置">配置</h4>
+<p>今天使用前几个方式在笔记本上进行自启动不成功，原因应该在于网络，节点/话题什么都有，但是无法使用rosnode list，因此，使用了robot_upstart来尝试，首先安装robot_upstart包，安装步骤比较简单：</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ sudo apt-get install ros-indigo-robot-upstart
+</code></pre></div></div>
+
+<p>安装完成后，大家可以查看<a href="http://docs.ros.org/jade/api/robot_upstart/html/">使用文档</a>来进行使用，方式也比较简单，不过是单一launch启动，由于clearpath的机器人譬如husky只提供了底盘启动的缘故，不过大家可以将多个launch合并为一个来进行启动，启动方式也比较简单，首先，安装需要自启动的launch文件，使用方式如下：</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ rosrun robot_upstart install myrobot_bringup/launch/base.launch
+</code></pre></div></div>
+
+<p>其中myrobot_bringup是要启动launch文件所在的包，base.launch是要启动的launch文件，只需要提供包到launch文件路径即可。需要注意的是，运行这个命令需要在sudo root权限下，这个步骤将写到系统中。</p>
+
+<p>安装launch文件完成后，将提示有很多文件被放到了系统中，如下输出：</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    Preparing to install files to the following paths:  
+      /etc/init/turtlebot.conf  
+      /etc/ros/indigo/turtlebot.d/.installed_files  
+      /etc/ros/indigo/turtlebot.d/minimal.launch  
+      /usr/sbin/turtlebot-start  
+      /usr/sbin/turtlebot-stop  
+    Now calling: /usr/bin/sudo /opt/ros/indigo/lib/robot_upstart/mutate_files  
+    Filesystem operation succeeded. 
+</code></pre></div></div>
+
+<p>现在启动服务的话，只是单机模式，即ROS_HOSTNAME/ROS_IP/ROS_MASTER_URI都是localhost，如果想要另外一个同一网段的计算机查看当前计算机的node/topic时，就需要对脚本进行修改，重要的脚本为  /usr/sbin/turtlebot-start，将该脚本中的</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    28  export ROS_HOSTNAME=$(hostname)  
+      
+    30  export ROS_MASTER_URI=http://127.0.0.1:11311  
+</code></pre></div></div>
+
+<p>修改为当前电脑局域网内的IP，比如我的为192.168.0.106，最好将上面的注释掉，重新书写一遍：</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>28  export ROS_HOSTNAME=192.168.0.106  
+  
+30  export ROS_MASTER_URI=http://192.168.0.106:11311 
+</code></pre></div></div>
+
+<p>现在运行服务，运行操作共有如下：</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ sudo service myrobot start  #启动脚本服务  
+$ sudo service myrobot stop  #停止脚本服务  
+$ sudo service myrobot restart  #重启脚本服务 
+</code></pre></div></div>
+
+<p>其中myrobot为安装launch文件中提示的，比如我的为turtlebot，查看/usr/sbin/turtlebot-start名字可以知道。启动完成后，在本地运行终端：</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ rostopic list
+</code></pre></div></div>
+
+<p>将会有输出，也可以在同一网段内的电脑上，配置好网络后，运行</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ rostopic list
+</code></pre></div></div>
+
+<p>也可以得到输出。服务输出日志文件为/var/log/upstart/myrobot.log，其中myrobot在我的电脑上为turtlebot.log。如果运行服务后没有输出，可以查看这个文件进行调试。</p>
+
+<h4 id="卸载">卸载</h4>
+
+<p>卸载命令如下</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>rosrun robot_upstart uninstall [-h] [--rosdistro DISTRO] JOBNAME
+</code></pre></div></div>
+
+<p>其中，JOBNAME是要卸载的脚本，比如我的是turtlebot，DISTRO为指定ROS版本，存在多个脚本时需要用到，比如：</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>rosrun robot_upstart uninstall turtlebot
+</code></pre></div></div>
+
+
+
+                <hr style="visibility: hidden;">
+
+                <ul class="pager">
+                    
+                    <li class="previous">
+                        <a href="/2017/06/03/ros-troubleshooting/" data-toggle="tooltip" data-placement="top" title="【ROS总结】ROS故障排除">
+                        Previous<br>
+                        <span>【ROS总结】ROS故障排除</span>
+                        </a>
+                    </li>
+                    
+                    
+                    <li class="next">
+                        <a href="/2017/11/25/ros-arduino-bridge-usage/" data-toggle="tooltip" data-placement="top" title="ros_arduino_bridge使用总结">
+                        Next<br>
+                        <span>ros_arduino_bridge使用总结</span>
+                        </a>
+                    </li>
+                    
+                </ul>
+
+
+                
+                <!-- disqus 评论框 start -->
+                <div class="comment">
+                    <div id="disqus_thread" class="disqus-thread"></div>
+                </div>
+                <!-- disqus 评论框 end -->
+                
+
+                
+            </div>  
+
+    <!-- Side Catalog Container -->
+        
+            <div class="
+                col-lg-2 col-lg-offset-0
+                visible-lg-block
+                sidebar-container
+                catalog-container">
+                <div class="side-catalog">
+                    <hr class="hidden-sm hidden-xs">
+                    <h5>
+                        <a class="catalog-toggle" href="#">CATALOG</a>
+                    </h5>
+                    <ul class="catalog-body"></ul>
+                </div>
+            </div>
+        
+
+    <!-- Sidebar Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                <!-- Featured Tags -->
+                
+                <section>
+                    <hr class="hidden-sm hidden-xs">
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+        				
+                            
+                				<a href="/tags/#ROS1" title="ROS1" rel="8">
+                                    ROS1
+                                </a>
+                            
+        				
+                            
+        				
+                            
+                				<a href="/tags/#Troubleshooting" title="Troubleshooting" rel="2">
+                                    Troubleshooting
+                                </a>
+                            
+        				
+                            
+        				
+                            
+        				
+                            
+        				
+                            
+                				<a href="/tags/#Release" title="Release" rel="4">
+                                    Release
+                                </a>
+                            
+        				
+                            
+        				
+                            
+        				
+                            
+        				
+                            
+        				
+        			</div>
+                </section>
+                
+
+                <!-- Friends Blog -->
+                
+                <hr>
+                <h5>FRIENDS</h5>
+                <ul class="list-inline">
+                    
+                        <li><a href="http://mida.re/">乱序</a></li>
+                    
+                        <li><a href="http://qianduan.guru/">前端外刊评论</a></li>
+                    
+                        <li><a href="http://lingyu.wang/">天镶的博客</a></li>
+                    
+                        <li><a href="http://hmqk1995.github.io">Luke 的自留地</a></li>
+                    
+                        <li><a href="http://ebnbin.com/">Ebn's Blog</a></li>
+                    
+                        <li><a href="http://blog.smdcn.net">SmdCn's Blog</a></li>
+                    
+                        <li><a href="https://www.ruoyaowu.com/">David's Game</a></li>
+                    
+                        <li><a href="http://dhong.co">DHong Say</a></li>
+                    
+                        <li><a href="http://ingf.github.io/">尹峰以为</a></li>
+                    
+                        <li><a href="http://xieminis.me/">解旻的博客</a></li>
+                    
+                </ul>
+                
+            </div>
+        </div>
+    </div>
+</article>
+
+
+
+
+
+
+<!-- disqus 公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES * * */
+    var disqus_shortname = "playfish";
+    var disqus_identifier = "/2017/08/01/turtlebot-startup-2";
+    var disqus_url = "http://localhost:4000/2017/08/01/turtlebot-startup-2/";
+
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<!-- disqus 公共JS代码 end -->
+
+
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+<!-- anchor-js, Doc:http://bryanbraun.github.io/anchorjs/ -->
+<script>
+    async("//cdnjs.cloudflare.com/ajax/libs/anchor-js/1.1.1/anchor.min.js",function(){
+        anchors.options = {
+          visible: 'always',
+          placement: 'right',
+          icon: '#'
+        };
+        anchors.add().remove('.intro-header h1').remove('.subheading').remove('.sidebar-container h5');
+    })
+</script>
+<style>
+    /* place left on bigger screen */
+    @media all and (min-width: 800px) {
+        .anchorjs-link{
+            position: absolute;
+            left: -0.75em;
+            font-size: 1.1em;
+            margin-top : -0.1em;
+        }
+    }
+</style>
+
+
+    <!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                    
+                    
+                    <li>
+                        <a href="https://twitter.com/Playfish">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                    
+
+                    <!-- add Weibo, Zhihu by Hux, add target = "_blank" to <a> by Hux -->
+                    
+                    <li>
+                        <a target="_blank" href="https://www.zhihu.com/people/Playfish">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa  fa-stack-1x fa-inverse">知</i>
+                            </span>
+                        </a>
+                    </li>
+                    
+                    
+                    <li>
+                        <a target="_blank" href="http://weibo.com/Playfish">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-weibo fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                    
+
+
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://github.com/Playfish">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                    
+                    
+                </ul>
+                <p class="copyright text-muted">
+                    Copyright &copy; Playfish Blog 2018
+                    <br>
+                    Theme by <a href="http://huangxuan.me">Hux</a> |
+                    <iframe
+                        style="margin-left: 2px; margin-bottom:-5px;"
+                        frameborder="0" scrolling="0" width="100px" height="20px"
+                        src="https://ghbtns.com/github-btn.html?user=huxpro&repo=huxpro.github.io&type=star&count=true" >
+                    </iframe>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- jQuery -->
+<script src="/js/jquery.min.js "></script>
+
+<!-- Bootstrap Core JavaScript -->
+<!-- Currently, only navbar scroll-down effect at desktop still depends on this -->
+<script src="/js/bootstrap.min.js "></script>
+
+<!-- Custom Theme JavaScript -->
+<script src="/js/hux-blog.min.js "></script>
+
+<!-- Service Worker -->
+
+<script src="/js/snackbar.js "></script>
+<script src="/js/sw-registration.js "></script>
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+<!--
+     Because of the native support for backtick-style fenced code blocks
+     right within the Markdown is landed in Github Pages,
+     From V1.6, There is no need for Highlight.js,
+     so Huxblog drops it officially.
+
+     - https://github.com/blog/2100-github-pages-now-faster-and-simpler-with-jekyll-3-0
+     - https://help.github.com/articles/creating-and-highlighting-code-blocks/
+     - https://github.com/jneen/rouge/wiki/list-of-supported-languages-and-lexers
+-->
+<!--
+    <script>
+        async("http://cdn.bootcss.com/highlight.js/8.6/highlight.min.js", function(){
+            hljs.initHighlightingOnLoad();
+        })
+    </script>
+    <link href="http://cdn.bootcss.com/highlight.js/8.6/styles/github.min.css" rel="stylesheet">
+-->
+
+
+<!-- jquery.tagcloud.js -->
+<script>
+    // only load tagcloud.js in tag.html
+    if($('#tag_cloud').length !== 0){
+        async('/js/jquery.tagcloud.js',function(){
+            $.fn.tagcloud.defaults = {
+                //size: {start: 1, end: 1, unit: 'em'},
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+<!--fastClick.js -->
+<script>
+    async("//cdnjs.cloudflare.com/ajax/libs/fastclick/1.0.6/fastclick.min.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+<!-- Google Analytics -->
+
+<script>
+    // dynamic User by Hux
+    var _gaId = 'UA-49627226-3';
+    var _gaDomain = 'carlzhang.playfish';
+
+    // Originial
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', _gaId, _gaDomain);
+    ga('send', 'pageview');
+</script>
+
+
+
+<!-- Baidu Tongji -->
+
+
+
+
+<!-- Side Catalog -->
+
+<script type="text/javascript">
+    function generateCatalog (selector) {
+        var P = $('div.post-container'),a,n,t,l,i,c;
+        a = P.find('h1,h2,h3,h4,h5,h6');
+        a.each(function () {
+            n = $(this).prop('tagName').toLowerCase();
+            i = "#"+$(this).prop('id');
+            t = $(this).text();
+            c = $('<a href="'+i+'" rel="nofollow">'+t+'</a>');
+            l = $('<li class="'+n+'_nav"></li>').append(c);
+            $(selector).append(l);
+        });
+        return true;
+    }
+
+    generateCatalog(".catalog-body");
+
+    // toggle side catalog
+    $(".catalog-toggle").click((function(e){
+        e.preventDefault();
+        $('.side-catalog').toggleClass("fold")
+    }))
+
+    /*
+     * Doc: https://github.com/davist11/jQuery-One-Page-Nav
+     * Fork by Hux to support padding
+     */
+    async("/js/jquery.nav.js", function () {
+        $('.catalog-body').onePageNav({
+            currentClass: "active",
+            changeHash: !1,
+            easing: "swing",
+            filter: "",
+            scrollSpeed: 700,
+            scrollOffset: 0,
+            scrollThreshold: .2,
+            begin: null,
+            end: null,
+            scrollChange: null,
+            padding: 80
+        });
+    });
+</script>
+
+
+
+
+<!-- Image to hack wechat -->
+<img src="/img/icon_wechat.png" width="0" height="0" />
+<!-- Migrate from head to bottom, no longer block render and still work -->
+
+</body>
+
+</html>
