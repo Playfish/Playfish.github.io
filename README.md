@@ -1,6 +1,9 @@
-#Hux Blog
+# Playfish | Carl Zhang Blog
 
-###[View Live Hux Blog &rarr;](https://huangxuan.me)
+>This theme is forked from [Huxpro/huxblog-boilerplate](https://github.com/Huxpro/huxblog-boilerplate) !
+
+### [View Live Carl Zhang Blog &rarr;](https://carlzhang.club)
+
 
 ![](http://huangxuan.me/img/blog-desktop.jpg)
 
