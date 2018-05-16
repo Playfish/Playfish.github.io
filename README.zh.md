@@ -1,6 +1,8 @@
-# Hux blog 模板
+# Carl Zhang 博客
 
-### [我的博客在这里 &rarr;](http://huxpro.github.io)
+> 模版来自[Huxpro](https://github.com/Huxpro/huxblog-boilerplate)
+
+### [我的博客在这里 &rarr;](http://carlzhang.club)
 
 
 ### 关于收到"Page Build Warning"的email
