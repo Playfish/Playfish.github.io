@@ -10,7 +10,7 @@
     <meta name="keywords"  content="张世伟, CarlZHang, Playfish, @Playfish, 张世伟的博客, ROS, 博客, 个人网站">
     <meta name="theme-color" content="#000000">
     
-    <title>【ROS总结】ROS下的百度语音识别应用 - Playfish的博客 | Carl Zhang Blog</title>
+    <title>Playfish的博客 | Carl Zhang Blog</title>
 
     <!-- Web App Manifest -->
     <link rel="manifest" href="/pwa/manifest.json">
@@ -19,7 +19,7 @@
     <link rel="shortcut icon" href="/img/favicon.ico">
     
     <!-- Canonical URL -->
-    <link rel="canonical" href="http://localhost:4000/2017/02/12/ros-baidu-speech/">
+    <link rel="canonical" href="http://localhost:4000/page2/">
 
     <!-- Bootstrap Core CSS -->
     <link rel="stylesheet" href="/css/bootstrap.min.css">
@@ -153,302 +153,202 @@
 </script>
 
 
-    <!-- Image to hack wechat -->
-<!-- <img src="/img/icon_wechat.png" width="0" height="0"> -->
-<!-- <img src="/img/in-post/ros-baidu-speech/baidu_speech.jpeg" width="0" height="0"> -->
-
-<!-- Post Header -->
-<style type="text/css">
-    header.intro-header{
-        position: relative;
-        background-image: url('/img/in-post/ros-baidu-speech/baidu_speech.jpeg')
-    }
-
-    
-    header.intro-header .header-mask{
-        width: 100%;
-        height: 100%;
-        position: absolute;
-        background: rgba(0,0,0, 0.3);
-    }
-    
-</style>
-<header class="intro-header" >
-    <div class="header-mask"></div>
+    <!-- Page Header -->
+<header class="intro-header" style="background-image: url('/img/home-bg.jpg')">
     <div class="container">
         <div class="row">
-            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
-                <div class="post-heading">
-                    <div class="tags">
-                        
-                        <a class="tag" href="/tags/#ROS1" title="ROS1">ROS1</a>
-                        
-                        <a class="tag" href="/tags/#Baidu Speech" title="Baidu Speech">Baidu Speech</a>
-                        
-                    </div>
-                    <h1>【ROS总结】ROS下的百度语音识别应用</h1>
-                    
-                    
-                    <h2 class="subheading">ROS baidu speech</h2>
-                    
-                    <span class="meta">Posted by Playfish on February 12, 2017</span>
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1 ">
+                <div class="site-heading">
+                    <h1>Playfish Blog</h1>
+                    <!--<hr class="small">-->
+                    <span class="subheading">一生想做浪漫极客</span>
                 </div>
             </div>
         </div>
     </div>
 </header>
 
-<!-- Post Content -->
-<article>
-    <div class="container">
-        <div class="row">
-
-    <!-- Post Container -->
-            <div class="
-                col-lg-8 col-lg-offset-2
-                col-md-10 col-md-offset-1
-                post-container">
-
-				<blockquote>
-  <p>说明:<br /><br />
-本文首发于 <a href="https://blog.csdn.net/u011118482/article/details/55001444">CSDN</a>，转载请保留链接。</p>
-</blockquote>
-
-<h2 id="前言">前言</h2>
-
-<p>今天闲来无事查看下语音识别在ROS中的应用，之前在ROS中玩过一段时间的Pocket Sphinx，关于Pocket Sphinx的学习过程以后会介绍，或者可以去网上搜索一些教程，都是比较不错的。现在讲述下在ROS中百度语音的使用情况，由于百度语音的作者写了一些文章在Github上，但是步骤不是很清楚，在此记录一下防止以后忘记，也和大家分享下，避免出现一些失误而导致半途而废。</p>
-
-<p>需求:</p>
-
-<table>
-  <thead>
-    <tr>
-      <th>软件</th>
-      <th>版本</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>操作系统</td>
-      <td>Ubuntu 14.04.2</td>
-    </tr>
-    <tr>
-      <td>ROS版本</td>
-      <td>Indigo</td>
-    </tr>
-  </tbody>
-</table>
-
-<h2 id="ros语音识别介绍">ROS语音识别介绍</h2>
-<p>关于一些在ROS中如何使用语音识别库，大家可以自行搜索下，基本上都是在ROS官网上的一些资料，目前官网上的<a href="http://wiki.ros.org/Sensors">语音识别库</a>一共有四个，分别为</p>
-
-<ul>
-  <li>
-    <p><a href="http://wiki.ros.org/baidu_speech">baidu_speech</a></p>
-  </li>
-  <li>
-    <p><a href="http://wiki.ros.org/hark">hark</a></p>
-  </li>
-  <li>
-    <p><a href="http://wiki.ros.org/pocketsphinx">pocketsphinx</a></p>
-  </li>
-  <li>
-    <p><a href="http://wiki.ros.org/rospeex">rospeex</a></p>
-  </li>
-</ul>
-
-<p>目前讲述的是百度的语音识别，目前百度语音已经支持ROS，大家可以学习下。以后会介绍其他三个语音库。</p>
-
-<h3 id="百度语音识别在ros中的应用">百度语音识别在ROS中的应用</h3>
-<p>关于如何在ROS中使用百度语音识别呢，作者也已经在wiki上介绍了，大家可以先查看下，网址是：http://wiki.ros.org/baidu_speech</p>
-
-<p>不过作者貌似没有提供在线安装，也就是apt-get来安装百度语音包，不过不妨碍今天的教程，安装百度语音包的过程如下：</p>
-
-<ul>
-  <li>在Github上下载百度语音包</li>
-  <li>安装百度语音包的需求包</li>
-  <li>运行并测试百度语音包中的说话者（simple_speaker.launch）和语音识别（simple_voice.launch）</li>
-</ul>
-
-<p>下面根据步骤来进行操作</p>
-
-<h4 id="在github上下载百度语音识别包">在Github上下载百度语音识别包</h4>
-<p>在下载之前，你应该有一个catkin工作空间，我的工作空间名字就是catkin_ws。然后在catkin_ws/src下下载百度语音识别包（simple_voice）</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ git clone https://github.com/DinnerHowe/simple_voice.git
-</code></pre></div></div>
-<p>下载完成后其实就可以使用，但是会提示错误，例如：No module named pyaudio 或者 Nomodule named vlc</p>
-
-<p>其实作者也已经说过了，要想使用simple_voice这个包，需要Python库，也就是pyaudio和vlc-python。下面安装需求包。</p>
-
-<h4 id="安装百度语音识别包的需求包">安装百度语音识别包的需求包</h4>
-
-<p>安装pyaudio其实是比较简单的，直接使用下面的命令就可以安装：</p>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code> $ sudo apt-get install python-pyaudio
-</code></pre></div></div>
-
-<p>这个步骤直接就在线安装了需求包pyaudio。</p>
-
-<p>安装vlc其实比较坑，或许是我的电脑的问题，没有找到在线安装命令也就是python-vlc这个包，就算安装了vlc所有的包也还是提示No module named vlc。</p>
-
-<p>不过最终还是解决了，使用如下方式，首先在你的home下，下载vlc的封装库：</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ cd  
-$ git clone https://github.com/geoffsalmon/vlc-python.git
-</code></pre></div></div>
-
-<p>下载完成后，使用如下命令加载vlc模型到Python中</p>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ sudo cp vlc-python/generated/vlc.py /usr/lib/python2.7/
-</code></pre></div></div>
-<p>Indigo的Python是2.7版本，大家也可以替换成你当前版本，路径还是/usr/lib。
-添加完成需求包后，就可以测试运行百度语音识别包了。</p>
-
-<h4 id="运行并测试百度语音包中的说话者simple_speakerlaunch和语音识别simple_voicelaunch">运行并测试百度语音包中的说话者（simple_speaker.launch）和语音识别（simple_voice.launch）</h4>
-
-<h5 id="测试simple_speakerlaunch">测试simple_speaker.launch</h5>
-
-<p>首先打开一个终端，输入如下命令来启动simple_speaker.launch</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ roslaunch simple_voice simple_speaker.launch
-</code></pre></div></div>
-
-<p>作者在网上说直接运行这个launch就可以听到说话，其实还少一步，需要添加音频文件才可以。作者在语音包中给出了一个“请让一下.mp3”，其他音频文件没有测试，大家可以测试下都支持什么音频文件，在此就不讲述了。</p>
-
-<p>运行完simple_speaker.launch后，多出了一个/speak_string的话题，该话题就是接收音频文件，需要手动的添加音频文件到simple_speaker节点，其中该launch文件只开启了一个节点就是simple_speaker。</p>
-
-<p>打开另一个终端，向simple_speaker节点添加音频文件：</p>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ roscd simple_voice/src  
-$ rostopic pub /speak_string std_msgs/String -- '请让一下.mp3' 
-</code></pre></div></div>
-
-<h5 id="测试simple_voicelaunch">测试simple_voice.launch</h5>
-<p>关于测试simple_voice.launch是容易的，直接一条命令搞定：</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ roslaunch simple_voice simple_voice.launch
-</code></pre></div></div>
-
-<p>然后对着电脑说话就可以了，比如:
-<img src="/img/in-post/ros-baidu-speech/baidu_speech_output.png" alt="" /></p>
-
-<p>每次只识别一次，识别完成后需要桥下Enter键才能继续识别，当然大家也可以对voice_node.py进行改造，变成实时语音识别。</p>
-
-
-
-                <hr style="visibility: hidden;">
-
-                <ul class="pager">
-                    
-                    <li class="previous">
-                        <a href="/2016/09/28/ros-interface-odometry/" data-toggle="tooltip" data-placement="top" title="【ROS总结】 ROS接口——Odometry">
-                        Previous<br>
-                        <span>【ROS总结】 ROS接口——Odometry</span>
-                        </a>
-                    </li>
-                    
-                    
-                    <li class="next">
-                        <a href="/2017/06/03/ros-troubleshooting/" data-toggle="tooltip" data-placement="top" title="【ROS总结】ROS故障排除">
-                        Next<br>
-                        <span>【ROS总结】ROS故障排除</span>
-                        </a>
-                    </li>
-                    
-                </ul>
-
-
-                
-                <!-- disqus 评论框 start -->
-                <div class="comment">
-                    <div id="disqus_thread" class="disqus-thread"></div>
-                </div>
-                <!-- disqus 评论框 end -->
-                
-
-                
-            </div>  
-
-    <!-- Side Catalog Container -->
-        
-            <div class="
-                col-lg-2 col-lg-offset-0
-                visible-lg-block
-                sidebar-container
-                catalog-container">
-                <div class="side-catalog">
-                    <hr class="hidden-sm hidden-xs">
-                    <h5>
-                        <a class="catalog-toggle" href="#">CATALOG</a>
-                    </h5>
-                    <ul class="catalog-body"></ul>
-                </div>
-            </div>
+<!-- Main Content -->
+<div class="container">
+	<div class="row">
         
 
+<!-- USE SIDEBAR -->
+    <!-- PostList Container -->
+    		<div class="
+                col-lg-8 col-lg-offset-1
+                col-md-8 col-md-offset-1
+                col-sm-12
+                col-xs-12
+                postlist-container
+            ">
+    			
+<div class="post-preview">
+    <a href="/2016/09/05/ros-startup-1/">
+        <h2 class="post-title">
+            【ROS总结】Turtlebot ROS 开机自启动设置
+        </h2>
+        
+        <h3 class="post-subtitle">
+            ROS startup setting 1
+        </h3>
+        
+        <div class="post-content-preview">
+            
+  说明:
+本文首发于 CSDN，转载请保留链接。
+
+
+前言
+
+关于ROS自启动设置，之前查看了很多相关文章，并不是很适用，尤其是开机启动时候加载minimal.launch和amcl.launch的时候，目前开启自启动的ROS包有upstart，该包是通过创建一个服务来启动minimal.launch等基本的launch文件，要是启动多个launch文件，可以通过把多个launch文件写...
+        </div>
+    </a>
+    <p class="post-meta">
+        Posted by Playfish on September 5, 2016
+    </p>
+</div>
+<hr>
+
+
+<!-- Pager -->
+
+<ul class="pager">
+    
+    <li class="previous">
+        <a href="/">&larr; Newer Posts</a>
+    </li>
+    
+    
+</ul>
+
+
+    		</div>
     <!-- Sidebar Container -->
             <div class="
-                col-lg-8 col-lg-offset-2
-                col-md-10 col-md-offset-1
-                sidebar-container">
-
+                col-lg-3 col-lg-offset-0
+                col-md-3 col-md-offset-0
+                col-sm-12
+                col-xs-12
+                sidebar-container
+            ">
                 <!-- Featured Tags -->
                 
                 <section>
                     <hr class="hidden-sm hidden-xs">
                     <h5><a href="/tags/">FEATURED TAGS</a></h5>
                     <div class="tags">
-        				
+                        
                             
-                				<a href="/tags/#ROS1" title="ROS1" rel="9">
+                                <a href="/tags/#ROS1" title="ROS1" rel="9">
                                     ROS1
                                 </a>
                             
-        				
+                        
                             
-                				<a href="/tags/#Turtlebot2" title="Turtlebot2" rel="2">
+                                <a href="/tags/#Turtlebot2" title="Turtlebot2" rel="2">
                                     Turtlebot2
                                 </a>
                             
-        				
+                        
                             
-                				<a href="/tags/#Startup" title="Startup" rel="2">
+                                <a href="/tags/#Startup" title="Startup" rel="2">
                                     Startup
                                 </a>
                             
-        				
+                        
                             
-        				
+                        
                             
-        				
+                        
                             
-        				
+                        
                             
-        				
+                        
                             
-        				
+                        
                             
-                				<a href="/tags/#Release" title="Release" rel="4">
+                                <a href="/tags/#Release" title="Release" rel="4">
                                     Release
                                 </a>
                             
-        				
+                        
                             
-        				
+                        
                             
-        				
+                        
                             
-        				
+                        
                             
-                				<a href="/tags/#ROS2" title="ROS2" rel="2">
+                                <a href="/tags/#ROS2" title="ROS2" rel="2">
                                     ROS2
                                 </a>
                             
-        				
+                        
                             
-        				
-        			</div>
+                        
+                    </div>
                 </section>
                 
 
+                <!-- Short About -->
+                <section class="visible-md visible-lg">
+                    <hr><h5><a href="/about/">ABOUT ME</a></h5>
+                    <div class="short-about">
+                        
+                            <img src="/img/personal/carl-playfish.jpg" />
+                        
+                        
+                            <p>写写代码，做做设计，<br>离开世界之前，一切都是过程</p>
+                        
+                        <!-- SNS Link -->
+                        <ul class="list-inline">
+                            
+                            
+                            <li>
+                                <a href="https://twitter.com/Playfish">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li>
+                                <a target="_blank" href="https://www.zhihu.com/people/Playfish">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa  fa-stack-1x fa-inverse">知</i>
+                                    </span>
+                                </a>
+                            </li>
+                            
+                            
+                            <li>
+                                <a target="_blank" href="http://weibo.com/Playfish">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-weibo fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            
+                            
+                            
+                            <li>
+                                <a target="_blank" href="https://github.com/Playfish">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            
+                            
+                        </ul>
+                    </div>
+                </section>
                 <!-- Friends Blog -->
                 
                 <hr>
@@ -477,67 +377,10 @@ $ rostopic pub /speak_string std_msgs/String -- '请让一下.mp3'
                     
                 </ul>
                 
-            </div>
-        </div>
-    </div>
-</article>
-
-
-
-
-
-
-<!-- disqus 公共JS代码 start (一个网页只需插入一次) -->
-<script type="text/javascript">
-    /* * * CONFIGURATION VARIABLES * * */
-    var disqus_shortname = "playfish";
-    var disqus_identifier = "/2017/02/12/ros-baidu-speech";
-    var disqus_url = "http://localhost:4000/2017/02/12/ros-baidu-speech/";
-
-    (function() {
-        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
-        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
-        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-    })();
-</script>
-<!-- disqus 公共JS代码 end -->
-
-
-
-
-<!-- async load function -->
-<script>
-    function async(u, c) {
-      var d = document, t = 'script',
-          o = d.createElement(t),
-          s = d.getElementsByTagName(t)[0];
-      o.src = u;
-      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
-      s.parentNode.insertBefore(o, s);
-    }
-</script>
-<!-- anchor-js, Doc:http://bryanbraun.github.io/anchorjs/ -->
-<script>
-    async("//cdnjs.cloudflare.com/ajax/libs/anchor-js/1.1.1/anchor.min.js",function(){
-        anchors.options = {
-          visible: 'always',
-          placement: 'right',
-          icon: '#'
-        };
-        anchors.add().remove('.intro-header h1').remove('.subheading').remove('.sidebar-container h5');
-    })
-</script>
-<style>
-    /* place left on bigger screen */
-    @media all and (min-width: 800px) {
-        .anchorjs-link{
-            position: absolute;
-            left: -0.75em;
-            font-size: 1.1em;
-            margin-top : -0.1em;
-        }
-    }
-</style>
+    		</div>
+        
+	</div>
+</div>
 
 
     <!-- Footer -->
@@ -719,50 +562,6 @@ $ rostopic pub /speak_string std_msgs/String -- '请让一下.mp3'
 
 
 <!-- Side Catalog -->
-
-<script type="text/javascript">
-    function generateCatalog (selector) {
-        var P = $('div.post-container'),a,n,t,l,i,c;
-        a = P.find('h1,h2,h3,h4,h5,h6');
-        a.each(function () {
-            n = $(this).prop('tagName').toLowerCase();
-            i = "#"+$(this).prop('id');
-            t = $(this).text();
-            c = $('<a href="'+i+'" rel="nofollow">'+t+'</a>');
-            l = $('<li class="'+n+'_nav"></li>').append(c);
-            $(selector).append(l);
-        });
-        return true;
-    }
-
-    generateCatalog(".catalog-body");
-
-    // toggle side catalog
-    $(".catalog-toggle").click((function(e){
-        e.preventDefault();
-        $('.side-catalog').toggleClass("fold")
-    }))
-
-    /*
-     * Doc: https://github.com/davist11/jQuery-One-Page-Nav
-     * Fork by Hux to support padding
-     */
-    async("/js/jquery.nav.js", function () {
-        $('.catalog-body').onePageNav({
-            currentClass: "active",
-            changeHash: !1,
-            easing: "swing",
-            filter: "",
-            scrollSpeed: 700,
-            scrollOffset: 0,
-            scrollThreshold: .2,
-            begin: null,
-            end: null,
-            scrollChange: null,
-            padding: 80
-        });
-    });
-</script>
 
 
 

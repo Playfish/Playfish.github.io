@@ -5,9 +5,91 @@
     <description>关于个人成长历程、ROS设计 | Carl Zhang，About personal growth, ROS designer. | 这里是 @Playfish 的个人博客，与你一起发现更大的世界。</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Mon, 14 May 2018 03:42:24 -0700</pubDate>
-    <lastBuildDate>Mon, 14 May 2018 03:42:24 -0700</lastBuildDate>
+    <pubDate>Thu, 17 May 2018 07:00:31 -0700</pubDate>
+    <lastBuildDate>Thu, 17 May 2018 07:00:31 -0700</lastBuildDate>
     <generator>Jekyll v3.8.1</generator>
+    
+      <item>
+        <title>【ROS翻译】Ubuntu下安装ROS2</title>
+        <description>&lt;blockquote&gt;
+  &lt;p&gt;说明:&lt;br /&gt;&lt;br /&gt;
+本文首发于 &lt;a href=&quot;http://carlzhang.club/2018/05/14/install-ros2/&quot;&gt;Playfish Blog&lt;/a&gt;，转载请保留链接。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h2 id=&quot;前言&quot;&gt;前言&lt;/h2&gt;
+
+&lt;p&gt;在Beta 2中，我们正在为Ubuntu Xenial构建Debian软件包。它们在一个临时存储库中进行测试。下面的链接和说明参考了最新版本——目前是ardent。&lt;/p&gt;
+
+&lt;p&gt;资源:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;a href=&quot;build.ros2.org&quot;&gt;Jenkins实例&lt;/a&gt;&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;a href=&quot;http://repo.ros2.org/&quot;&gt;存储库&lt;/a&gt;&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;状态页面(&lt;a href=&quot;http://repo.ros2.org/status_page/ros_ardent_default.html&quot;&gt;amd64&lt;/a&gt;,&lt;a href=&quot;http://repo.ros2.org/status_page/ros_ardent_uxv8.html&quot;&gt;arm64&lt;/a&gt;)&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;安装源&quot;&gt;安装源&lt;/h2&gt;
+
+&lt;p&gt;要安装Debian软件包，你需要将我们的Debian存储库添加到apt源。首先你需要授权我们的gpg密钥，就像这样:&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;sudo apt update &amp;amp;&amp;amp; sudo apt install curl
+curl http://repo.ros2.org/repos.key | sudo apt-key add -
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;然后将存储库添加到你的源列表中:&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;sudo sh -c 'echo &quot;deb [arch=amd64,arm64] http://repo.ros2.org/ubuntu/main xenial main&quot; &amp;gt; /etc/apt/sources.list.d/ros2-latest.list'
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h2 id=&quot;安装ros2包&quot;&gt;安装ROS2包&lt;/h2&gt;
+
+&lt;p&gt;下面的命令安装除了&lt;code class=&quot;highlighter-rouge&quot;&gt;ros-ardent-ros1-bridge&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;ros-ardent-turtlebot2-*&lt;/code&gt;之外的所有&lt;code class=&quot;highlighter-rouge&quot;&gt;ros-ardent-*&lt;/code&gt;包，因为它们需要ROS 1的依赖项。下面看看如何安装这些。&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;sudo apt update
+sudo apt install `apt list &quot;ros-ardent-*&quot; 2&amp;gt; /dev/null | grep &quot;/&quot; | awk -F/ '{print $1}' | grep -v -e ros-ardent-ros1-bridge -e ros-ardent-turtlebot2- | tr &quot;\n&quot; &quot; &quot;`
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h2 id=&quot;环境设置&quot;&gt;环境设置&lt;/h2&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;source /opt/ros/ardent/setup.bash
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;如果你已经安装了Python包&lt;code class=&quot;highlighter-rouge&quot;&gt;argcomplete&lt;/code&gt;(版本0.8.5或更高版本，请参见下面的Xenial说明)，你可以从以下文件中获取以下文件以完成诸如&lt;code class=&quot;highlighter-rouge&quot;&gt;ros2&lt;/code&gt;这样的命令行工具:&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;source /opt/ros/ardent/share/ros2cli/environment/ros2-argcomplete.bash
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;可选在ubuntu-1604上安装argcomplete--085&quot;&gt;(可选)在Ubuntu 16.04上安装argcomplete &amp;gt;= 0.8.5&lt;/h3&gt;
+&lt;p&gt;如果你需要在Ubuntu 16.04 (Xenial)上安装&lt;code class=&quot;highlighter-rouge&quot;&gt;argcomplete&lt;/code&gt;，那么你将需要使用pip，通过&lt;code class=&quot;highlighter-rouge&quot;&gt;apt-get&lt;/code&gt;可用的版本将不会工作，因为该版本的&lt;code class=&quot;highlighter-rouge&quot;&gt;argcomplete&lt;/code&gt;有一个bug:&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;sudo apt install python3-pip
+sudo pip3 install argcomplete
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h2 id=&quot;选择rmw实现&quot;&gt;选择RMW实现&lt;/h2&gt;
+&lt;p&gt;默认情况下，将使用RMW实现&lt;code class=&quot;highlighter-rouge&quot;&gt;FastRTPS&lt;/code&gt;。通过设置环境变量&lt;code class=&quot;highlighter-rouge&quot;&gt;RMW_IMPLEMENTATION=rmw_opensplice_cpp&lt;/code&gt;，你也可以切换到使用OpenSplice。&lt;/p&gt;
+
+&lt;h2 id=&quot;使用ros1包的其他包&quot;&gt;使用ROS1包的其他包&lt;/h2&gt;
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;ros1_bridge&lt;/code&gt;和Turtlebot机器人演示使用的是ROS 1包。为了能够安装它们，请先在&lt;a href=&quot;wiki.ros.org/Installation/Ubuntu?distro=kinetic&quot;&gt;这里&lt;/a&gt;添加记录的ROS 1源。&lt;/p&gt;
+
+&lt;p&gt;如果你正在使用Docker进行隔离，你可以从镜像&lt;code class=&quot;highlighter-rouge&quot;&gt;ros:kinetic&lt;/code&gt;或&lt;code class=&quot;highlighter-rouge&quot;&gt;osrf/ros:kinetic-desktop&lt;/code&gt;开始:这也将避免设置ros源，因为它们已经被集成了。&lt;/p&gt;
+
+&lt;p&gt;现在你可以安装其余的包:&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;sudo apt update
+sudo apt install ros-ardent-ros1-bridge ros-ardent-turtlebot2-*
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+</description>
+        <pubDate>Mon, 14 May 2018 11:14:34 -0700</pubDate>
+        <link>http://localhost:4000/2018/05/14/install-ros2/</link>
+        <guid isPermaLink="true">http://localhost:4000/2018/05/14/install-ros2/</guid>
+        
+        <category>ROS2</category>
+        
+        <category>Installation</category>
+        
+        
+      </item>
     
       <item>
         <title>【ROS总结】发布ROS2包到ROS版本</title>
@@ -1599,78 +1681,6 @@ private:
         <category>ros_control</category>
         
         <category>Odometry</category>
-        
-        
-      </item>
-    
-      <item>
-        <title>【ROS总结】Turtlebot ROS 开机自启动设置</title>
-        <description>&lt;blockquote&gt;
-  &lt;p&gt;说明:&lt;br /&gt;&lt;br /&gt;
-本文首发于 &lt;a href=&quot;https://blog.csdn.net/u011118482/article/details/52437927&quot;&gt;CSDN&lt;/a&gt;，转载请保留链接。&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;h2 id=&quot;前言&quot;&gt;前言&lt;/h2&gt;
-
-&lt;p&gt;关于ROS自启动设置，之前查看了很多相关文章，并不是很适用，尤其是开机启动时候加载minimal.launch和amcl.launch的时候，目前开启自启动的ROS包有&lt;a href=&quot;http://docs.ros.org/jade/api/robot_upstart/html/&quot;&gt;upstart&lt;/a&gt;，该包是通过创建一个服务来启动minimal.launch等基本的launch文件，要是启动多个launch文件，可以通过把多个launch文件写入到一个launch中这样的方法来启动。&lt;/p&gt;
-
-&lt;p&gt;还有其他方式是利用Ubuntu自带的开机启动文件来达到多launch文件启动效果，一种是服务，方法和upstart类似，如果想要多launch文件分别启动，例如minimal.launch和amcl.launch两个launch文件，当启动完minimal.launch后，再启动amcl.launch会出现waiting for device…字样，导致的结果就是amcl.launch自动不了，还得重新启动。因此，把多个launch文件写入到一个launch启动就不会提示waiting for device…。&lt;/p&gt;
-
-&lt;h2 id=&quot;rclocal&quot;&gt;rc.local&lt;/h2&gt;
-
-&lt;p&gt;另外一种是在开机启动文件rc.local文件中直接写入ros命令来达到开机启动效果，把minimal和amcl两个launch文件写成一个launch命名为auto_start.launch，然后在rc.laoch中写入如下内容：&lt;/p&gt;
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;source /opt/ros/indigo/setup.bash
-roslaunch /etc/auto_start.launch 
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-&lt;p&gt;其中auto_start.launch文件所在位置并不重要，需要写在exit 0的前面即可，不过这个不能启动用户目录下的配置，如果启动用户目录下的launch文件，需要source ~/.bashrc。&lt;/p&gt;
-
-&lt;p&gt;我用的方法是，把所有需要的配置和launch文件写到了一个脚本中，通过开机启动脚本来达到启动效果，不过经过测试，单独运行两个launch文件还是有错误，即运行完minimal后运行amcl.launch的时候，会卡在waiting for device…。目前解决方法是把minimal和amcl写到了一个文件中命名为minimal_amcl.launch。&lt;/p&gt;
-
-&lt;p&gt;启动minimal_amcl.launch文件是在开机的第20秒左右，amcl.launch和minimal.launch共启动了两次，基本完全启动差不多是一到两分钟左右。目前不知道是什么原因，如果有知道的请告知，谢谢！&lt;/p&gt;
-
-&lt;p&gt;首先，在家目录下创建一个名为aotu_runing的目录，在该目录下创建脚本文件minimal，内容如下：&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&amp;lt;pre name=&quot;code&quot; class=&quot;plain&quot;&amp;gt;#!/bin/bash
-source /opt/ros/indigo/setup.bash
-source ~/.bashrc
-export TURTLEBOT_BASE=kobuki
-export TURTLEBOT_3D_SENSOR=kinect
-export TURTLEBOT_MAP_FILE=&amp;lt;path_of_map_file&amp;gt;
-source ~/catkin_ws/devel/setup.bash
-export ROS_HOSTNAME=10.42.0.1
-export ROS_MASTER_URI=http://10.42.0.1:11311
-d='data +%Y%m%d-%H:%M:%S'
-echo &quot;[$d]:minimal runing&quot; &amp;gt;&amp;gt; ~/print_log.txt
-roslaunch turtlebot_bringup minimal_amcl.launch
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;其中首先source ros路径，然后source bashrc和用户目录下的catkin_ws，因为catkin_ws目录下包含了路径规划算法。&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&amp;lt;pre name=&quot;code&quot; class=&quot;plain&quot;&amp;gt;d='data +%Y%m%d-%H:%M:%S'
-echo &quot;[$d]:minimal runing&quot; &amp;gt;&amp;gt; ~/print_log.txt
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;打印出信息到家目录下。&lt;/p&gt;
-
-&lt;p&gt;然后修改/etc/rc.local文件：&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c&quot;&gt;#!/bin/sh -e&lt;/span&gt;
-
-&lt;span class=&quot;nb&quot;&gt;cd&lt;/span&gt; ~/aotu_runing
-./minimal
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-&lt;p&gt;配置完成，当再次开机的时候，等待1到2分钟，会听到Turtlebot响声，amcl也一起启动。&lt;/p&gt;
-
-</description>
-        <pubDate>Mon, 05 Sep 2016 03:14:08 -0700</pubDate>
-        <link>http://localhost:4000/2016/09/05/ros-startup-1/</link>
-        <guid isPermaLink="true">http://localhost:4000/2016/09/05/ros-startup-1/</guid>
-        
-        <category>ROS1</category>
-        
-        <category>Turtlebot2</category>
-        
-        <category>Startup</category>
         
         
       </item>
