@@ -2,7 +2,7 @@
 
 >This theme is forked from [Huxpro/huxblog-boilerplate](https://github.com/Huxpro/huxblog-boilerplate) !
 
-### [View Live Carl Zhang Blog &rarr;](https://carlzhang.club)
+### [View Live Carl Zhang Blog &rarr;](http://carlzhang.club)
 
 
 ![](http://huangxuan.me/img/blog-desktop.jpg)
