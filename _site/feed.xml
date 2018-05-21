@@ -5,9 +5,238 @@
     <description>关于个人成长历程、ROS设计 | Carl Zhang，About personal growth, ROS designer. | 这里是 @Playfish 的个人博客，与你一起发现更大的世界。</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Thu, 17 May 2018 07:00:31 -0700</pubDate>
-    <lastBuildDate>Thu, 17 May 2018 07:00:31 -0700</lastBuildDate>
+    <pubDate>Sun, 20 May 2018 20:13:47 -0700</pubDate>
+    <lastBuildDate>Sun, 20 May 2018 20:13:47 -0700</lastBuildDate>
     <generator>Jekyll v3.8.1</generator>
+    
+      <item>
+        <title>【ROS翻译】ROS2 Ament教程</title>
+        <description>&lt;blockquote&gt;
+  &lt;p&gt;说明:&lt;br /&gt;&lt;br /&gt;
+本文首发于 &lt;a href=&quot;http://carlzhang.club/2018/05/17/ament-tutorial/&quot;&gt;Playfish Blog&lt;/a&gt;，转载请保留链接。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h2 id=&quot;概述&quot;&gt;概述&lt;/h2&gt;
+
+&lt;p&gt;这将为你提供一个快速总结，如何使用一个工作空间来启动和运行。它将是一个实用的教程，并不是用来取代核心文档的。&lt;/p&gt;
+
+&lt;h3 id=&quot;背景&quot;&gt;背景&lt;/h3&gt;
+
+&lt;p&gt;Ament是catkin元构建工具的一个迭代。欲了解更多有关Ament设计的资料，请参阅&lt;a href=&quot;http://design.ros2.org/articles/ament.html&quot;&gt;本文件&lt;/a&gt;。&lt;/p&gt;
+
+&lt;p&gt;该源可以在&lt;a href=&quot;https://github.com/ament&quot;&gt;ament Github组织中找到&lt;/a&gt;。&lt;/p&gt;
+
+&lt;h3 id=&quot;先决条件&quot;&gt;先决条件&lt;/h3&gt;
+
+&lt;h3 id=&quot;开发环境&quot;&gt;开发环境&lt;/h3&gt;
+
+&lt;p&gt;请确保根据build-from-source&lt;a href=&quot;https://github.com/ros2/ros2/wiki/Installation&quot;&gt;指令&lt;/a&gt;设置开发环境。&lt;/p&gt;
+
+&lt;h3 id=&quot;基础知识&quot;&gt;基础知识&lt;/h3&gt;
+
+&lt;p&gt;一个ament空间是一个具有特定结构的目录，通常有一个&lt;code class=&quot;highlighter-rouge&quot;&gt;src&lt;/code&gt;子目录，在该子目录中，源代码将位于其中，一般情况下，目录开始为空。&lt;/p&gt;
+
+&lt;p&gt;Ament是由源生成的。默认情况下，它将创建一个和&lt;code class=&quot;highlighter-rouge&quot;&gt;src&lt;/code&gt;并行的目录：&lt;code class=&quot;highlighter-rouge&quot;&gt;build&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;install&lt;/code&gt;目录。&lt;code class=&quot;highlighter-rouge&quot;&gt;build&lt;/code&gt;目录将是存储中间文件的地方。对于每个包，将在其中创建一个子文件夹，其中将调用CMake。&lt;code class=&quot;highlighter-rouge&quot;&gt;install&lt;/code&gt;目录是每个包被安装到的地方。&lt;/p&gt;
+
+&lt;p&gt;注意:与catkin相比，没有&lt;code class=&quot;highlighter-rouge&quot;&gt;devel&lt;/code&gt;目录。&lt;/p&gt;
+
+&lt;h3 id=&quot;创建目录结构&quot;&gt;创建目录结构&lt;/h3&gt;
+
+&lt;p&gt;在&lt;code class=&quot;highlighter-rouge&quot;&gt;~/ros2_ws&lt;/code&gt;下创建基本目录结构：&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nb&quot;&gt;mkdir&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-p&lt;/span&gt; ~/ros_ws/src
+&lt;span class=&quot;nb&quot;&gt;cd&lt;/span&gt; ~/ros2_ws
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;这是&lt;code class=&quot;highlighter-rouge&quot;&gt;~/ros2_ws&lt;/code&gt;的目录结构，你可以在这一点上看到:&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;.
+└── src
+
+1 directory, 0 files
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;添加源码&quot;&gt;添加源码&lt;/h3&gt;
+&lt;p&gt;首先，我们需要安装一个没有任何ROS2安装的底层。&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;wget https://raw.githubusercontent.com/ros2/ros2/master/ros2.repos
+vcs import ~/ros2_ws/src &amp;lt; ros2.repos
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;这是&lt;code class=&quot;highlighter-rouge&quot;&gt;~/ros2_ws&lt;/code&gt;的目录结构，你可以期望在添加了数据源之后(请注意，具体的结构和目录的数量可能会随着时间而变化)&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;.
+├── ros2.repos
+└── src
+    ├── ament
+    │   ├── ament_cmake
+    │   ├── ament_index
+    |   ...
+    │   ├── osrf_pycommon
+    │   └── uncrustify
+    ├── eProsima
+    │   ├── Fast-CDR
+    │   └── Fast-RTPS
+    ├── ros
+    │   ├── class_loader
+    │   └── console_bridge
+    └── ros2
+        ├── ament_cmake_ros
+        ├── common_interfaces
+        ├── demos
+        ...
+        ├── urdfdom
+        ├── urdfdom_headers
+        └── vision_opencv
+
+51 directories, 1 file
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;运行build&quot;&gt;运行build&lt;/h3&gt;
+
+&lt;p&gt;因为这是一个引导环境，我们需要通过它的完整路径调用ament.py。&lt;/p&gt;
+
+&lt;p&gt;注意:在将来，一旦在你的系统上安装了ament，或者在工作环境下，这将不再是必要的。&lt;/p&gt;
+
+&lt;p&gt;由于在ament上没有&lt;code class=&quot;highlighter-rouge&quot;&gt;devel&lt;/code&gt;空间，因此需要安装它支持的每个包&lt;code class=&quot;highlighter-rouge&quot;&gt;--symlink-install&lt;/code&gt;。&lt;/p&gt;
+
+&lt;p&gt;这允许通过将&lt;code class=&quot;highlighter-rouge&quot;&gt;source&lt;/code&gt;空间中的文件(例如Python文件或其他未编译的资源)更改为更快的迭代，从而更改已安装的文件。&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;src/ament/ament_tools/scripts/ament.py build &lt;span class=&quot;nt&quot;&gt;--build-tests&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--symlink-install&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;运行测试&quot;&gt;运行测试&lt;/h3&gt;
+
+&lt;p&gt;要运行你刚刚构建的测试，使用&lt;code class=&quot;highlighter-rouge&quot;&gt;--build-test&lt;/code&gt;选项，运行以下操作:&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;src/ament/ament_tools/scripts/ament.py &lt;span class=&quot;nb&quot;&gt;test&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;如果你在包括测试之前建好了(并且安装了)工作区，你可以跳过构建和安装步骤来加快进程。&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;src/ament/ament_tools/scripts/ament.py &lt;span class=&quot;nb&quot;&gt;test&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--skip-build&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--skip-install&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;source环境&quot;&gt;source环境&lt;/h3&gt;
+
+&lt;p&gt;当构造成功完成构建时，输出将在&lt;code class=&quot;highlighter-rouge&quot;&gt;install&lt;/code&gt;目录中。&lt;/p&gt;
+
+&lt;p&gt;要使用你需要的可执行文件和库，请将&lt;code class=&quot;highlighter-rouge&quot;&gt;install/bin&lt;/code&gt;目录添加到你的路径中。&lt;/p&gt;
+
+&lt;p&gt;Ament将在&lt;code class=&quot;highlighter-rouge&quot;&gt;install&lt;/code&gt;目录中生成bash文件，以帮助设置环境。&lt;/p&gt;
+
+&lt;p&gt;这些文件将向你的路径和库路径添加所需的元素，并提供由包导出的bash或shell命令。&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nb&quot;&gt;.&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;install&lt;/span&gt;/local_setup.bash
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;NB:这与catkin略有不同。&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;local_setup.*&lt;/code&gt;文件与&lt;code class=&quot;highlighter-rouge&quot;&gt;setup.*&lt;/code&gt;文件略有不同。它只会应用当前工作区的设置。&lt;/p&gt;
+
+&lt;p&gt;当使用多个工作空间时，你仍然会提供&lt;code class=&quot;highlighter-rouge&quot;&gt;setup.*&lt;/code&gt;文件获取环境，包括所有的父工作区。&lt;/p&gt;
+
+&lt;h3 id=&quot;尝试演示&quot;&gt;尝试演示&lt;/h3&gt;
+
+&lt;p&gt;通过环境来源，你现在可以运行由ament构建的可执行文件。&lt;/p&gt;
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;ros2 run demo_nodes_cpp listener &amp;amp;
+ros2 run demo_nodes_cpp talker
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;你会看到数字在增加。&lt;/p&gt;
+
+&lt;p&gt;让我们删除节点并尝试创建我们自己的工作区覆盖。&lt;/p&gt;
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;^-C
+&lt;span class=&quot;nb&quot;&gt;kill&lt;/span&gt; %1
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;开发你的功能包&quot;&gt;开发你的功能包&lt;/h3&gt;
+
+&lt;p&gt;在&lt;a href=&quot;http://www.ros.org/reps/rep-0140.html&quot;&gt;REP 140&lt;/a&gt;中，Ament使用和catkin一样的指定文件&lt;code class=&quot;highlighter-rouge&quot;&gt;package.xml&lt;/code&gt;。&lt;/p&gt;
+
+&lt;p&gt;你可以在&lt;code class=&quot;highlighter-rouge&quot;&gt;src&lt;/code&gt;目录下创建你自己的功能包，然而，在迭代的时候要用一个叠加来进行迭代。&lt;/p&gt;
+
+&lt;h3 id=&quot;创建覆盖&quot;&gt;创建覆盖&lt;/h3&gt;
+
+&lt;p&gt;现在你已经设置好了你的引导，你也会发现&lt;code class=&quot;highlighter-rouge&quot;&gt;ament&lt;/code&gt;在你的路径上。&lt;/p&gt;
+
+&lt;p&gt;让我们创建一个新的覆盖目录： &lt;code class=&quot;highlighter-rouge&quot;&gt;~/ros2_overlay_ws&lt;/code&gt;。&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nb&quot;&gt;mkdir&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-p&lt;/span&gt; ~/ros2_overlay_ws/src
+&lt;span class=&quot;nb&quot;&gt;cd&lt;/span&gt; ~/ros2_overlay_ws/src
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;并且我们开始覆盖&lt;a href=&quot;https://github.com/ros2/examples&quot;&gt;ros2/examples 存储库&lt;/a&gt;：&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c&quot;&gt;# If you know that you're using the latest branch of all&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# repositories in the underlay, you can also get the latest&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# version of the ros2/examples repository, with this command:&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;#   git clone https://github.com/ros2/examples.git&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# Otherwise, clone a copy from the underlay source code:&lt;/span&gt;
+git clone ~/ros2_ws/src/ros2/examples
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;构建覆盖层，但是让我们使用debug构建，这样我们就可以确保得到调试符号：&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nb&quot;&gt;cd&lt;/span&gt; ~/ros2_overlay_ws
+ament build &lt;span class=&quot;nt&quot;&gt;--cmake-args&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-DCMAKE_BUILD_TYPE&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;Debug
+
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;现在这个覆盖层在现有的覆盖层之上，所以你会发现&lt;code class=&quot;highlighter-rouge&quot;&gt;talker&lt;/code&gt;现在指的是来自底层的那个。&lt;/p&gt;
+
+&lt;p&gt;如果你source &lt;code class=&quot;highlighter-rouge&quot;&gt;~/ros2_overlay_ws/install/local_setup.bash&lt;/code&gt;将更改为在覆盖层中引用talker。&lt;/p&gt;
+
+&lt;p&gt;如果你正在返回一个新的终端到你的开发，并且想要在你的覆盖层上进行开发，你可以简单地提供&lt;code class=&quot;highlighter-rouge&quot;&gt;~/ros2_overlay_ws/install/setup.bash&lt;/code&gt;将自动地为所有的父工作区环境提供源。&lt;/p&gt;
+
+&lt;h2 id=&quot;创建自己的包&quot;&gt;创建自己的包&lt;/h2&gt;
+
+&lt;p&gt;你可以创建自己的包。
+等效的&lt;code class=&quot;highlighter-rouge&quot;&gt;catkin_create_package&lt;/code&gt;将被移植到ament，但目前还没有。&lt;/p&gt;
+
+&lt;p&gt;空间支持多种构建类型。
+推荐的构建类型是&lt;code class=&quot;highlighter-rouge&quot;&gt;ament_cmake&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;ament_python&lt;/code&gt;。
+也支持纯&lt;code class=&quot;highlighter-rouge&quot;&gt;cmake&lt;/code&gt;包。
+它将增加对更多&lt;a href=&quot;https://github.com/ament/ament_tools/blob/master/doc/development/build_types.rst&quot;&gt;构建类型&lt;/a&gt;的支持。&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;ament_python&lt;/code&gt;构建的一个示例是&lt;a href=&quot;https://github.com/ament/ament_tools&quot;&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;ament_tools&lt;/code&gt;包&lt;/a&gt;，其中setup.py是构建的主要入口点。&lt;/p&gt;
+
+&lt;p&gt;像&lt;a href=&quot;https://github.com/ros2/demos/tree/master/demo_nodes_cpp&quot;&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;demo_nodes_cpp&lt;/code&gt;&lt;/a&gt;这样的包使用&lt;code class=&quot;highlighter-rouge&quot;&gt;ament_cmake&lt;/code&gt;构建类型，并使用CMake作为构建工具。&lt;/p&gt;
+
+&lt;h2 id=&quot;提示&quot;&gt;提示&lt;/h2&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;
+    &lt;p&gt;如果你不想构建一个特定的包，那么在目录中放置一个名为“AMENT_IGNORE”的空文件，它将不会被索引。&lt;/p&gt;
+
+    &lt;p&gt;“Catch all”选项，例如:–cmake-args应该放在其他选项之后，或用’–‘分隔：&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;ament build &lt;span class=&quot;nb&quot;&gt;.&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--force-cmake-configure&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--cmake-args&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-DCMAKE_BUILD_TYPE&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;Debug &lt;span class=&quot;nt&quot;&gt;--&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--ament-cmake-args&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-DCMAKE_BUILD_TYPE&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;Release
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;br /&gt;&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;如果你想从包运行单个特定的测试:
+    &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;ament test --only-packages YOUR_PKG_NAME --ctest-args -R YOUR_TEST_IN_PKG
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;    &lt;/div&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+</description>
+        <pubDate>Thu, 17 May 2018 07:30:00 -0700</pubDate>
+        <link>http://localhost:4000/2018/05/17/ament-tutorial/</link>
+        <guid isPermaLink="true">http://localhost:4000/2018/05/17/ament-tutorial/</guid>
+        
+        <category>ROS2</category>
+        
+        <category>Ament</category>
+        
+        <category>Tutorial</category>
+        
+        
+      </item>
     
       <item>
         <title>【ROS翻译】Ubuntu下安装ROS2</title>
@@ -1560,127 +1789,6 @@ $ rostopic pub /speak_string std_msgs/String -- '请让一下.mp3'
         <category>ROS1</category>
         
         <category>Baidu Speech</category>
-        
-        
-      </item>
-    
-      <item>
-        <title>【ROS总结】 ROS接口——Odometry</title>
-        <description>&lt;blockquote&gt;
-  &lt;p&gt;说明:&lt;br /&gt;&lt;br /&gt;
-本文首发于 &lt;a href=&quot;https://blog.csdn.net/u011118482/article/details/52688982&quot;&gt;CSDN&lt;/a&gt;，转载请保留链接。&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;h2 id=&quot;前言&quot;&gt;前言&lt;/h2&gt;
-
-&lt;p&gt;版本：Indigo&lt;/p&gt;
-
-&lt;p&gt;这篇文章主要是把平时用到的一些ROS接口梳理一下，避免无法和ros进行对接，首先ROS中相对重要的是里程计（Odometry），里程计的重要性不言而喻，如果没有里程计，不管是建立地图还是导航都不会很好的工作，相应的Odometry更新也有一些节点可以调用，本文主要用到的是&lt;a href=&quot;https://github.com/ros-controls/ros_controllers/blob/indigo-devel/diff_drive_controller/src/odometry.cpp&quot;&gt;ros_controllers中的差分驱动控制器&lt;/a&gt;，&lt;a href=&quot;http://wiki.ros.org/ros_control&quot;&gt;介绍文档如下&lt;/a&gt;，该控制器用处广泛，基本差分驱动都可以用到，从底层得到左右电机编码器数据，通过机器人运动学转换成Odometry消息发送出去，其他节点得到Odometry消息就可以在rviz或者Gazebo中更新机器人位置信息，也可以加上imu数据让机器人更准确。&lt;/p&gt;
-
-&lt;h2 id=&quot;ros_controllers&quot;&gt;ros_controllers&lt;/h2&gt;
-&lt;p&gt;安装方法为：&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ sudo apt-get install ros-indigo-ros-controllers
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;本文并没有直接使用Odometry消息，而是通过ros_controls中的&lt;a href=&quot;http://wiki.ros.org/hardware_interface?distro=indigo&quot;&gt;hardware_interface&lt;/a&gt;来更新Odometry。相应教程说明如下，&lt;a href=&quot;https://github.com/ros-controls/ros_control/wiki/hardware_interface&quot;&gt;链接地址&lt;/a&gt;。直接更新hardware_interface中的joint就可以更新Odometry。在本地声明一个类为myrobot，继承于hardware_interface::RobotHw。&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;#include &amp;lt;hardware_interface/joint_command_interface.h&amp;gt;//关节命令接口，用于接收/cmd_vel数据
-#include &amp;lt;hardware_interface/joint_state_interface.h&amp;gt;//关节状态接口，用于更新Odometry
-#include &amp;lt;hardware_interface/robot_hw.h&amp;gt;
-
-class MyRobot : public hardware_interface::RobotHW
-{
-public:
-  MyRobot() 
- { 
-   // connect and register the joint state interface
-   hardware_interface::JointStateHandle state_handle_a(&quot;A&quot;, &amp;amp;pos[0], &amp;amp;vel[0], &amp;amp;eff[0]);
-   jnt_state_interface.registerHandle(state_handle_a);
-
-   hardware_interface::JointStateHandle state_handle_b(&quot;B&quot;, &amp;amp;pos[1], &amp;amp;vel[1], &amp;amp;eff[1]);
-   jnt_state_interface.registerHandle(state_handle_b);
-
-   registerInterface(&amp;amp;jnt_state_interface);
-
-   // connect and register the joint position interface
-   hardware_interface::JointHandle pos_handle_a(jnt_state_interface.getHandle(&quot;A&quot;), &amp;amp;cmd[0]);
-   jnt_pos_interface.registerHandle(pos_handle_a);
-
-   hardware_interface::JointHandle pos_handle_b(jnt_state_interface.getHandle(&quot;B&quot;), &amp;amp;cmd[1]);
-   jnt_pos_interface.registerHandle(pos_handle_b);
-
-   registerInterface(&amp;amp;jnt_pos_interface);
-  }
-
-private:
-  hardware_interface::JointStateInterface jnt_state_interface;
-  hardware_interface::PositionJointInterface jnt_pos_interface;
-  double cmd[2];
-  double pos[2];
-  double vel[2];
-  double eff[2];
-};
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;其中”A”为机器人模型中的关节，一般为wheel_left。同理“B”也是轮子关节，一般为wheel_right。pos为当前机器人的位置，vel为机器人目前速度，eff为初始状态时机器人位置，cmd为接收cmd_vel消息用于控制机器人运动。需要注意的是pos为轮子所走过的弧度，因此上传时需要上传弧度值。&lt;/p&gt;
-
-&lt;p&gt;&lt;a href=&quot;https://github.com/ros-controls/ros_controllers/blob/kinetic-devel/diff_drive_controller/src/odometry.cpp&quot;&gt;Odometry.cpp&lt;/a&gt;文件中更新Odometry的代码为：&lt;/p&gt;
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt; bool Odometry::update(double left_pos, double right_pos, const ros::Time &amp;amp;time)
-  {
-    /// Get current wheel joint positions:
-    const double left_wheel_cur_pos  = left_pos  * wheel_radius_;
-    const double right_wheel_cur_pos = right_pos * wheel_radius_;
-
-    /// Estimate velocity of wheels using old and current position:
-    const double left_wheel_est_vel  = left_wheel_cur_pos  - left_wheel_old_pos_;
-    const double right_wheel_est_vel = right_wheel_cur_pos - right_wheel_old_pos_;
-
-    /// Update old position with current:
-    left_wheel_old_pos_  = left_wheel_cur_pos;
-    right_wheel_old_pos_ = right_wheel_cur_pos;
-
-    /// Compute linear and angular diff:
-    const double linear  = (right_wheel_est_vel + left_wheel_est_vel) * 0.5 ;
-    const double angular = (right_wheel_est_vel - left_wheel_est_vel) / wheel_separation_;
-
-    /// Integrate odometry:
-    integrate_fun_(linear, angular);
-
-    /// We cannot estimate the speed with very small time intervals:
-    const double dt = (time - timestamp_).toSec();
-    if (dt &amp;lt; 0.0001)
-      return false; // Interval too small to integrate with
-
-    timestamp_ = time;
-
-    /// Estimate speeds using a rolling mean to filter them out:
-    linear_acc_(linear/dt);
-    angular_acc_(angular/dt);
-
-    linear_ = bacc::rolling_mean(linear_acc_);
-    angular_ = bacc::rolling_mean(angular_acc_);
-
-    return true;
-  }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;其中&lt;/p&gt;
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;const double left_wheel_cur_pos  = left_pos  * wheel_radius_;
-
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-&lt;p&gt;当前的轮子所走过的弧度*轮子半径，得到当前轮子走过的距离，因此，这就是为什么pos要为弧度值。&lt;/p&gt;
-
-</description>
-        <pubDate>Wed, 28 Sep 2016 04:23:57 -0700</pubDate>
-        <link>http://localhost:4000/2016/09/28/ros-interface-odometry/</link>
-        <guid isPermaLink="true">http://localhost:4000/2016/09/28/ros-interface-odometry/</guid>
-        
-        <category>ROS1</category>
-        
-        <category>ros_control</category>
-        
-        <category>Odometry</category>
         
         
       </item>

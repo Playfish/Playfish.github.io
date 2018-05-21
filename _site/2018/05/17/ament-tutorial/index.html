@@ -10,7 +10,7 @@
     <meta name="keywords"  content="张世伟, CarlZHang, Playfish, @Playfish, 张世伟的博客, ROS, 博客, 个人网站">
     <meta name="theme-color" content="#000000">
     
-    <title>【ROS总结】点激光扫描仪数据发布（驱动编写） - Playfish的博客 | Carl Zhang Blog</title>
+    <title>【ROS翻译】ROS2 Ament教程 - Playfish的博客 | Carl Zhang Blog</title>
 
     <!-- Web App Manifest -->
     <link rel="manifest" href="/pwa/manifest.json">
@@ -19,7 +19,7 @@
     <link rel="shortcut icon" href="/img/favicon.ico">
     
     <!-- Canonical URL -->
-    <link rel="canonical" href="http://localhost:4000/2017/11/25/write-laserscan-publisher/">
+    <link rel="canonical" href="http://localhost:4000/2018/05/17/ament-tutorial/">
 
     <!-- Bootstrap Core CSS -->
     <link rel="stylesheet" href="/css/bootstrap.min.css">
@@ -155,13 +155,13 @@
 
     <!-- Image to hack wechat -->
 <!-- <img src="/img/icon_wechat.png" width="0" height="0"> -->
-<!-- <img src="/img/in-post/write-laserscan-publisher/laserscan.jpeg" width="0" height="0"> -->
+<!-- <img src="/img/in-post/release-ros2-into-rosdistro/ros2_logo.png" width="0" height="0"> -->
 
 <!-- Post Header -->
 <style type="text/css">
     header.intro-header{
         position: relative;
-        background-image: url('/img/in-post/write-laserscan-publisher/laserscan.jpeg')
+        background-image: url('/img/in-post/release-ros2-into-rosdistro/ros2_logo.png')
     }
 
     
@@ -181,19 +181,19 @@
                 <div class="post-heading">
                     <div class="tags">
                         
-                        <a class="tag" href="/tags/#ROS1" title="ROS1">ROS1</a>
+                        <a class="tag" href="/tags/#ROS2" title="ROS2">ROS2</a>
                         
-                        <a class="tag" href="/tags/#Release" title="Release">Release</a>
+                        <a class="tag" href="/tags/#Ament" title="Ament">Ament</a>
                         
-                        <a class="tag" href="/tags/#driver" title="driver">driver</a>
+                        <a class="tag" href="/tags/#Tutorial" title="Tutorial">Tutorial</a>
                         
                     </div>
-                    <h1>【ROS总结】点激光扫描仪数据发布（驱动编写）</h1>
+                    <h1>【ROS翻译】ROS2 Ament教程</h1>
                     
                     
-                    <h2 class="subheading">Wirte laser scan data publisher(ROS driver)</h2>
+                    <h2 class="subheading">ROS2 ament tutorial</h2>
                     
-                    <span class="meta">Posted by Playfish on November 25, 2017</span>
+                    <span class="meta">Posted by Playfish on May 17, 2018</span>
                 </div>
             </div>
         </div>
@@ -213,334 +213,216 @@
 
 				<blockquote>
   <p>说明:<br /><br />
-本文首发于 <a href="https://blog.csdn.net/u011118482/article/details/78632555">CSDN</a>，转载请保留链接。</p>
+本文首发于 <a href="http://carlzhang.club/2018/05/17/ament-tutorial/">Playfish Blog</a>，转载请保留链接。</p>
 </blockquote>
 
-<h2 id="前言">前言</h2>
+<h2 id="概述">概述</h2>
 
-<p>在使用ROS的过程中，不可避免的会遇到要自己手动编写驱动、节点、行为库、服务、消息等内容，尤其是需要一些传感器，而所需传感器没有相关ROS驱动时，下面将讲述的是在使用的传感器中，没有ROS驱动时，我们将如何使用该传感器。</p>
+<p>这将为你提供一个快速总结，如何使用一个工作空间来启动和运行。它将是一个实用的教程，并不是用来取代核心文档的。</p>
 
-<p>在接下来的博客中将根据本身经验来编写一些ROS相关内容，权当是作为记忆来分享。</p>
+<h3 id="背景">背景</h3>
 
-<h2 id="ros驱动点激光扫描仪">ROS驱动——点激光扫描仪</h2>
+<p>Ament是catkin元构建工具的一个迭代。欲了解更多有关Ament设计的资料，请参阅<a href="http://design.ros2.org/articles/ament.html">本文件</a>。</p>
 
-<p>下面将讲述使用ROS官方未有的传感器来作为样例，我使用的是莱旭光电的CHT-10点激光传感器作为 介绍，首先这款传感器通信协议部分比较简单，基本上打开串口就可以读出数据，在将数据进行转换就可以得到想要的距离，比较方便，免去复杂的部分，对教程也有帮助，毕竟教程主要讲述的是ROS驱动部分。</p>
+<p>该源可以在<a href="https://github.com/ament">ament Github组织中找到</a>。</p>
 
-<p>相关ROS驱动代码可以在github上找到进行下载：https://github.com/Playfish/cht10_node</p>
+<h3 id="先决条件">先决条件</h3>
 
-<p>CHT-10是点激光，扫描范围是0.05-10m，真实的应该是0.15-10m，10m未测试，不过0.15盲区还是有的。</p>
+<h3 id="开发环境">开发环境</h3>
 
-<p>下图是CHT-10的通信协议部分介绍：</p>
+<p>请确保根据build-from-source<a href="https://github.com/ros2/ros2/wiki/Installation">指令</a>设置开发环境。</p>
 
-<p><img src="/img/in-post/write-laserscan-publisher/laserscan_protocol.png" alt="" /></p>
+<h3 id="基础知识">基础知识</h3>
 
-<p>可以看到想要的数据在9~12位（四字节），得到的数据需要除以1000才能得到真实的距离（米），ROS消息中基本单位是米。</p>
+<p>一个ament空间是一个具有特定结构的目录，通常有一个<code class="highlighter-rouge">src</code>子目录，在该子目录中，源代码将位于其中，一般情况下，目录开始为空。</p>
 
-<h3 id="消息选定">消息选定</h3>
+<p>Ament是由源生成的。默认情况下，它将创建一个和<code class="highlighter-rouge">src</code>并行的目录：<code class="highlighter-rouge">build</code>和<code class="highlighter-rouge">install</code>目录。<code class="highlighter-rouge">build</code>目录将是存储中间文件的地方。对于每个包，将在其中创建一个子文件夹，其中将调用CMake。<code class="highlighter-rouge">install</code>目录是每个包被安装到的地方。</p>
 
-<p>关于选择什么消息作为该传感器的ROS消息，这个相对来说不是很重要，不过作为通用项来说，尽量向通用靠近（即使用ROS官方消息定义，而不是自己定义消息）。目前激光消息的话，有两个选择，第一个是sensor_msgs/LaserScan消息类型，不过该消息类型适合有角度的传感器，即180°或360°的2D雷达或激光，而目前使用的激光是单点类型，和激光笔差不多，只有一个点，那么可以选择sensor_msgs/Range消息类型，该消息类型适用于超声波传感器、红外传感器单点类型，CHT-10就用这个类型。</p>
+<p>注意:与catkin相比，没有<code class="highlighter-rouge">devel</code>目录。</p>
 
-<p>关于该消息：可以查看<a href="docs.ros.org/api/sensor_msgs/html/msg/Range.html">sensor_msgs/Range</a></p>
+<h3 id="创建目录结构">创建目录结构</h3>
 
-<h3 id="准备工作">准备工作</h3>
+<p>在<code class="highlighter-rouge">~/ros2_ws</code>下创建基本目录结构：</p>
 
-<p>传感器选型选定、通信消息选定，那么接下来还需要做：</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">mkdir</span> <span class="nt">-p</span> ~/ros_ws/src
+<span class="nb">cd</span> ~/ros2_ws
+</code></pre></div></div>
+
+<p>这是<code class="highlighter-rouge">~/ros2_ws</code>的目录结构，你可以在这一点上看到:</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.
+└── src
+
+1 directory, 0 files
+</code></pre></div></div>
+
+<h3 id="添加源码">添加源码</h3>
+<p>首先，我们需要安装一个没有任何ROS2安装的底层。</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>wget https://raw.githubusercontent.com/ros2/ros2/master/ros2.repos
+vcs import ~/ros2_ws/src &lt; ros2.repos
+</code></pre></div></div>
+
+<p>这是<code class="highlighter-rouge">~/ros2_ws</code>的目录结构，你可以期望在添加了数据源之后(请注意，具体的结构和目录的数量可能会随着时间而变化)</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.
+├── ros2.repos
+└── src
+    ├── ament
+    │   ├── ament_cmake
+    │   ├── ament_index
+    |   ...
+    │   ├── osrf_pycommon
+    │   └── uncrustify
+    ├── eProsima
+    │   ├── Fast-CDR
+    │   └── Fast-RTPS
+    ├── ros
+    │   ├── class_loader
+    │   └── console_bridge
+    └── ros2
+        ├── ament_cmake_ros
+        ├── common_interfaces
+        ├── demos
+        ...
+        ├── urdfdom
+        ├── urdfdom_headers
+        └── vision_opencv
+
+51 directories, 1 file
+</code></pre></div></div>
+
+<h3 id="运行build">运行build</h3>
+
+<p>因为这是一个引导环境，我们需要通过它的完整路径调用ament.py。</p>
+
+<p>注意:在将来，一旦在你的系统上安装了ament，或者在工作环境下，这将不再是必要的。</p>
+
+<p>由于在ament上没有<code class="highlighter-rouge">devel</code>空间，因此需要安装它支持的每个包<code class="highlighter-rouge">--symlink-install</code>。</p>
+
+<p>这允许通过将<code class="highlighter-rouge">source</code>空间中的文件(例如Python文件或其他未编译的资源)更改为更快的迭代，从而更改已安装的文件。</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>src/ament/ament_tools/scripts/ament.py build <span class="nt">--build-tests</span> <span class="nt">--symlink-install</span>
+</code></pre></div></div>
+
+<h3 id="运行测试">运行测试</h3>
+
+<p>要运行你刚刚构建的测试，使用<code class="highlighter-rouge">--build-test</code>选项，运行以下操作:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>src/ament/ament_tools/scripts/ament.py <span class="nb">test</span>
+</code></pre></div></div>
+
+<p>如果你在包括测试之前建好了(并且安装了)工作区，你可以跳过构建和安装步骤来加快进程。</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>src/ament/ament_tools/scripts/ament.py <span class="nb">test</span> <span class="nt">--skip-build</span> <span class="nt">--skip-install</span>
+</code></pre></div></div>
+
+<h3 id="source环境">source环境</h3>
+
+<p>当构造成功完成构建时，输出将在<code class="highlighter-rouge">install</code>目录中。</p>
+
+<p>要使用你需要的可执行文件和库，请将<code class="highlighter-rouge">install/bin</code>目录添加到你的路径中。</p>
+
+<p>Ament将在<code class="highlighter-rouge">install</code>目录中生成bash文件，以帮助设置环境。</p>
+
+<p>这些文件将向你的路径和库路径添加所需的元素，并提供由包导出的bash或shell命令。</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">.</span> <span class="nb">install</span>/local_setup.bash
+</code></pre></div></div>
+
+<p>NB:这与catkin略有不同。</p>
+
+<p><code class="highlighter-rouge">local_setup.*</code>文件与<code class="highlighter-rouge">setup.*</code>文件略有不同。它只会应用当前工作区的设置。</p>
+
+<p>当使用多个工作空间时，你仍然会提供<code class="highlighter-rouge">setup.*</code>文件获取环境，包括所有的父工作区。</p>
+
+<h3 id="尝试演示">尝试演示</h3>
+
+<p>通过环境来源，你现在可以运行由ament构建的可执行文件。</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ros2 run demo_nodes_cpp listener &amp;
+ros2 run demo_nodes_cpp talker
+</code></pre></div></div>
+
+<p>你会看到数字在增加。</p>
+
+<p>让我们删除节点并尝试创建我们自己的工作区覆盖。</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>^-C
+<span class="nb">kill</span> %1
+</code></pre></div></div>
+
+<h3 id="开发你的功能包">开发你的功能包</h3>
+
+<p>在<a href="http://www.ros.org/reps/rep-0140.html">REP 140</a>中，Ament使用和catkin一样的指定文件<code class="highlighter-rouge">package.xml</code>。</p>
+
+<p>你可以在<code class="highlighter-rouge">src</code>目录下创建你自己的功能包，然而，在迭代的时候要用一个叠加来进行迭代。</p>
+
+<h3 id="创建覆盖">创建覆盖</h3>
+
+<p>现在你已经设置好了你的引导，你也会发现<code class="highlighter-rouge">ament</code>在你的路径上。</p>
+
+<p>让我们创建一个新的覆盖目录： <code class="highlighter-rouge">~/ros2_overlay_ws</code>。</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">mkdir</span> <span class="nt">-p</span> ~/ros2_overlay_ws/src
+<span class="nb">cd</span> ~/ros2_overlay_ws/src
+</code></pre></div></div>
+
+<p>并且我们开始覆盖<a href="https://github.com/ros2/examples">ros2/examples 存储库</a>：</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># If you know that you're using the latest branch of all</span>
+<span class="c"># repositories in the underlay, you can also get the latest</span>
+<span class="c"># version of the ros2/examples repository, with this command:</span>
+<span class="c">#   git clone https://github.com/ros2/examples.git</span>
+<span class="c"># Otherwise, clone a copy from the underlay source code:</span>
+git clone ~/ros2_ws/src/ros2/examples
+</code></pre></div></div>
+
+<p>构建覆盖层，但是让我们使用debug构建，这样我们就可以确保得到调试符号：</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">cd</span> ~/ros2_overlay_ws
+ament build <span class="nt">--cmake-args</span> <span class="nt">-DCMAKE_BUILD_TYPE</span><span class="o">=</span>Debug
+
+</code></pre></div></div>
+
+<p>现在这个覆盖层在现有的覆盖层之上，所以你会发现<code class="highlighter-rouge">talker</code>现在指的是来自底层的那个。</p>
+
+<p>如果你source <code class="highlighter-rouge">~/ros2_overlay_ws/install/local_setup.bash</code>将更改为在覆盖层中引用talker。</p>
+
+<p>如果你正在返回一个新的终端到你的开发，并且想要在你的覆盖层上进行开发，你可以简单地提供<code class="highlighter-rouge">~/ros2_overlay_ws/install/setup.bash</code>将自动地为所有的父工作区环境提供源。</p>
+
+<h2 id="创建自己的包">创建自己的包</h2>
+
+<p>你可以创建自己的包。
+等效的<code class="highlighter-rouge">catkin_create_package</code>将被移植到ament，但目前还没有。</p>
+
+<p>空间支持多种构建类型。
+推荐的构建类型是<code class="highlighter-rouge">ament_cmake</code>和<code class="highlighter-rouge">ament_python</code>。
+也支持纯<code class="highlighter-rouge">cmake</code>包。
+它将增加对更多<a href="https://github.com/ament/ament_tools/blob/master/doc/development/build_types.rst">构建类型</a>的支持。</p>
+
+<p><code class="highlighter-rouge">ament_python</code>构建的一个示例是<a href="https://github.com/ament/ament_tools"><code class="highlighter-rouge">ament_tools</code>包</a>，其中setup.py是构建的主要入口点。</p>
+
+<p>像<a href="https://github.com/ros2/demos/tree/master/demo_nodes_cpp"><code class="highlighter-rouge">demo_nodes_cpp</code></a>这样的包使用<code class="highlighter-rouge">ament_cmake</code>构建类型，并使用CMake作为构建工具。</p>
+
+<h2 id="提示">提示</h2>
 
 <ul>
-  <li>Frame_id：Frame在ROS中作用至关重要，消息将和TF绑定才可以读取数据，在这里作为通用可配置，暂定内容为：laser，用户可自定义设置（通过ROS Parameters设置）。</li>
-  <li>串口：避免和其他传感器串口冲突，因此在这里预留出一个串口设置参数，用户可以自定义设置（通过ROS Parameters设置）。</li>
-  <li>话题：消息内容需要通过话题发布，并且话题需要唯一，不然容易崩溃，在这里选择话题为“range”</li>
+  <li>
+    <p>如果你不想构建一个特定的包，那么在目录中放置一个名为“AMENT_IGNORE”的空文件，它将不会被索引。</p>
+
+    <p>“Catch all”选项，例如:–cmake-args应该放在其他选项之后，或用’–‘分隔：</p>
+  </li>
 </ul>
 
-<p>当然以上部分可以不考虑，这个是作为通用型需要考虑的，暂时可以先忘记以上部分，下面开启代码部分</p>
-
-<h3 id="测试代码编写">测试代码编写</h3>
-
-<p>在这部分，主要先编写测试代码，如果测试代码无问题，就可以写到node中，测试代码和ROS无关系，只是通过串口读取数据，并且在终端显示出来，整体思路如下：</p>
-
-<p>传感器选择 -&gt; 测试程序测试（类似串口助手） -&gt; ROS node绑定（将测试程序读取部分加入到ROS中） -&gt; 将node加入到nodelet中封装</p>
-
-<p>下面是测试程序部分，也可以在cht10_node/test中找到，名为<a href="https://github.com/Playfish/cht10_node/blob/master/test/test_cht10.cpp">test_cht10.cpp</a>：</p>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    #include &lt;string&gt;  
-    #include &lt;cht10_node/seiral_func.hpp&gt;  
-    #include &lt;cstdlib&gt;  
-      
-    #include &lt;iostream&gt;  
-    #include &lt;stdint.h&gt;  
-    #define BUFSIZE 17  
-      
-    int main(int argc, char** argv){  
-      cht10_seiral_func::Cht10Driver cht10driver_;  
-      
-      std::string serialNumber_;  
-      serialNumber_ = "/dev/ttyUSB0";  
-      int baudRate_ = 115200;  
-      
-      std::stringstream ostream;  
-      int fd, len, rcv_cnt;  
-      bool success_flag;  
-      char buf[40], temp_buf[BUFSIZE],result_buf[BUFSIZE];  
-      int laser_data=0;  
-      char data_buf[4];  
-      rcv_cnt = 0;  
-      success_flag = false;  
-      memset(buf, 0xba, sizeof(buf));  
-      memset(temp_buf, 0xba, sizeof(temp_buf));  
-      memset(result_buf, 0xba, sizeof(result_buf));  
-      
-      fd = open(serialNumber_.c_str(), O_RDWR | O_NOCTTY | O_NDELAY );  
-      if(fd &lt; 0){  
-        std::cout&lt;&lt;"Open Serial: "&lt;&lt;serialNumber_.c_str()&lt;&lt;" Error!";  
-        exit(0);  
-      }  
-        
-      cht10driver_.UART0_Init(fd,baudRate_,0,8,1,'N');  
-      while(1){  
-        len = cht10driver_.UART0_Recv(fd, buf,40);  
-        if(len&gt;0){  
-          for(int i = 0; i &lt; len; i++){  
-            if(rcv_cnt&lt;=BUFSIZE){    
-              result_buf[rcv_cnt++] = buf[i];  
-              if(rcv_cnt == BUFSIZE){  
-                success_flag = true;  
-              }  
-            }//end if  
-            else{  
-              /**** 
-              *  checkout received data 
-              */  
-    //          std::cout&lt;&lt;"Received data, with :[";  
-    //          for(int j=0;j&lt;BUFSIZE;j++){  
-    //            printf("%c ",(unsigned char) result_buf[j]);  
-    //          }  
-    //          printf("] \n");  
-              success_flag = false;  
-      
-              for(int count = 0; count &lt; 4; count++){  
-                data_buf[count] = result_buf[9+count];  
-              }  
-              sscanf(data_buf, "%x", &amp;laser_data);  
-              std::cout&lt;&lt;"sensor data:"&lt;&lt;laser_data&lt;&lt;", Distance: "&lt;&lt;(double)laser_data/1000&lt;&lt;std::endl;  
-              /**** 
-               *  data writing end 
-               */  
-              if('~' == buf[i]){  
-                rcv_cnt = 0;  
-                result_buf[rcv_cnt++] = buf[i];  
-              }  
-            }//end else  
-          }//end for      
-        }  
-      }  
-      
-        
-    }  
-</code></pre></div></div>
-<p>我将串口部分封装成一个类名为<code class="highlighter-rouge">Cht10Driver</code>，该类包含串口读/写部分、初始化。</p>
-
-<p>通过使用<code class="highlighter-rouge">catkin_make</code>可以得到一个名为<code class="highlighter-rouge">test_cht10</code>的可执行文件，使用<code class="highlighter-rouge">./test_cht10</code>可以运行，将CHT-10插入到电脑上，并且电脑只有一个ttyUSB0，就可以读取数据，数据将显示为sensor data: 传感器毫米数据， Distance: 传感器米数据。</p>
-
-<h3 id="ros驱动编写">ROS驱动编写</h3>
-
-<p>上部分讲述了测试程序编写，主要作用是通过串口读取传感器数据，那么得到传感器数据之后，就可以将传感器数据填充到ROS消息中，然后通过话题形式发布出去，如下是将传感器数据填充到ROS消息并封装成nodelet类的主要部分：</p>
-
-<p>完整代码可以查看： <a href="https://github.com/Playfish/cht10_node/blob/master/src/cht10_node.cpp">cht10_node.cpp</a></p>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    /** 
-     * @file /Cht10_serial_func/src/Cht10_serial_func.cpp 
-     * 
-     * @brief Implementation for dirver with read data from Cht10 nodelet 
-     * 
-     * @author Carl 
-     * 
-     **/  
-      
-    /***************************************************************************** 
-     ** Includes 
-     *****************************************************************************/  
-    #include &lt;string&gt;  
-    #include &lt;ros/ros.h&gt;  
-    #include &lt;std_msgs/String.h&gt;  
-    #include &lt;nodelet/nodelet.h&gt;  
-    #include &lt;ecl/threads/thread.hpp&gt;  
-    #include &lt;sensor_msgs/LaserScan.h&gt;    
-    #include &lt;sensor_msgs/Range.h&gt;    
-    #include &lt;pluginlib/class_list_macros.h&gt;  
-    #include &lt;cht10_node/seiral_func.hpp&gt;  
-      
-      
-    namespace cht10_seiral_func{  
-      
-    class Cht10Func : public nodelet::Nodelet{  
-    #define BUFSIZE 17  
-    #define SCALE 1000  
-      
-    public:  
-      Cht10Func() : shutdown_requested_(false),serialNumber_("/dev/USB0"),frame_id("laser"){}  
-      
-      ~Cht10Func(){  
-        NODELET_DEBUG_STREAM("Waiting for update thread to finish.");  
-        shutdown_requested_ = true;  
-        update_thread_.join();  
-      }  
-      
-      virtual void onInit(){  
-      
-        ros::NodeHandle nh = this-&gt;getPrivateNodeHandle();  
-        std::string name = nh.getUnresolvedNamespace();  
-        nh.getParam("serialNumber", serialNumber_);  
-        nh.getParam("baudRate", baudRate_);  
-        nh.getParam("frame_id", frame_id);  
-        rcv_cnt = 0;  
-        success_flag = 0;  
-      
-        fd = open(serialNumber_.c_str(), O_RDWR | O_NOCTTY | O_NDELAY );  
-        if(fd &lt; 0){  
-          ROS_ERROR_STREAM("Open Serial: "&lt;&lt;serialNumber_.c_str()&lt;&lt;" Error!");  
-          exit(0);  
-        }  
-      
-        int countSeq=0;  
-        scan_pub = nh.advertise&lt;sensor_msgs::Range&gt;("range",100);  
-        memset(buf, 0, sizeof(buf));  
-        memset(temp_buf, 0, sizeof(temp_buf));  
-        memset(result_buf, 0, sizeof(result_buf));  
-        Cht10driver_.UART0_Init(fd,baudRate_,0,8,1,'N');  
-        ROS_INFO_STREAM("Open serial: ["&lt;&lt; serialNumber_.c_str() &lt;&lt;" ] successful, with idex: "&lt;&lt;fd&lt;&lt;".");  
-        NODELET_INFO_STREAM("Cht10Func initialised. Spinning up update thread ... [" &lt;&lt; name &lt;&lt; "]");  
-        update_thread_.start(&amp;Cht10Func::update, *this);  
-      }  
-      
-      double data_to_meters(int &amp;data, int scale){  
-        return (double)data/scale;  
-      }  
-      
-      void publish_scan(ros::Publisher *pub,  
-                        double nodes, ros::Time start,  
-                        std::string frame_id){  
-      
-        float final_range;  
-        sensor_msgs::Range range_msg;  
-        range_msg.field_of_view = 0.05235988;  
-        range_msg.max_range = 10.0;  
-        range_msg.min_range = 0.05;  
-        range_msg.header.frame_id = frame_id;  
-        range_msg.radiation_type = sensor_msgs::Range::INFRARED;  
-        if(nodes &gt; range_msg.max_range){  
-          final_range = std::numeric_limits&lt;float&gt;::infinity();  
-        }else if(nodes &lt; range_msg.min_range){  
-          final_range = -std::numeric_limits&lt;float&gt;::infinity();  
-        }else{  
-          final_range = nodes;  
-        }  
-        range_msg.header.stamp = start;  
-        range_msg.header.seq = countSeq;  
-        range_msg.range = final_range;  
-        scan_pub.publish(range_msg);  
-      
-      }  
-      
-      bool get_scan_data(){  
-        len = Cht10driver_.UART0_Recv(fd, buf,40);  
-        if(len&gt;0){  
-          for(int i = 0; i &lt; len; i++){  
-            if(rcv_cnt&lt;=BUFSIZE){    
-              result_buf[rcv_cnt++] = buf[i];  
-              if(rcv_cnt == BUFSIZE){  
-                success_flag = true;  
-              }  
-            }//end if  
-            else{  
-              /**** 
-              *  checkout received data 
-              */  
-              success_flag = false;  
-               for(int count = 0; count &lt; 4; count++){  
-                data_buf[count] = result_buf[9+count];  
-              }  
-              sscanf(data_buf, "%x", &amp;laser_data);  
-                
-              //std::cout&lt;&lt;"sensor data:"&lt;&lt;laser_data&lt;&lt;std::endl;  
-      
-              /**** 
-               *  data writing end 
-               */  
-              if('~' == buf[i]){  
-                rcv_cnt = 0;  
-                result_buf[rcv_cnt++] = buf[i];  
-              }  
-            }//end else  
-          }//end for      
-        }  
-      }  
-    private:  
-      void update(){  
-        rcv_cnt = 0;  
-        success_flag = 0;  
-        laser_data = 0;  
-        ros::Rate spin_rate(50);  
-        memset(buf, 0, sizeof(buf));  
-        memset(temp_buf, 0, sizeof(temp_buf));  
-        memset(result_buf, 0, sizeof(result_buf));  
-        ROS_INFO_STREAM("Begin receive data from "&lt;&lt;serialNumber_.c_str()&lt;&lt;", with idex:"&lt;&lt;fd&lt;&lt;".");  
-        fd = open(serialNumber_.c_str(), O_RDWR | O_NOCTTY | O_NDELAY );  
-        Cht10driver_.UART0_Init(fd,baudRate_,0,8,1,'N');  
-        while (! shutdown_requested_ &amp;&amp; ros::ok())  
-        {  
-          start_scan_time = ros::Time::now();  
-          success_flag = get_scan_data();  
-                
-          //Send data  
-          publish_scan(&amp;scan_pub, data_to_meters(laser_data,SCALE),  
-                           start_scan_time, frame_id);  
-          spin_rate.sleep();  
-      
-          countSeq++;  
-        }  
-      
-        ROS_INFO_STREAM("Shotdown and close serial: "&lt;&lt;serialNumber_.c_str()&lt;&lt;".");  
-        Cht10driver_.UART0_Close(fd);  
-      }  
-    private:  
-      int fd, len, rcv_cnt;  
-      int success_flag;  
-      char buf[40], temp_buf[BUFSIZE],result_buf[BUFSIZE];  
-        
-      Cht10Driver Cht10driver_;  
-      ecl::Thread update_thread_;  
-      bool shutdown_requested_;  
-      ros::Publisher scan_pub;  
-      int laser_data;  
-      char data_buf[4];  
-      // ROS Parameters  
-      std::string serialNumber_;  
-      int baudRate_;  
-      int countSeq;  
-        
-      std::string frame_id;  
-      
-      ros::Time start_scan_time;  
-    };  
-      
-    } //namespace Cht10_serial_func  
-    PLUGINLIB_EXPORT_CLASS(cht10_seiral_func::Cht10Func,  
-    nodelet::Nodelet);  
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ament build <span class="nb">.</span> <span class="nt">--force-cmake-configure</span> <span class="nt">--cmake-args</span> <span class="nt">-DCMAKE_BUILD_TYPE</span><span class="o">=</span>Debug <span class="nt">--</span> <span class="nt">--ament-cmake-args</span> <span class="nt">-DCMAKE_BUILD_TYPE</span><span class="o">=</span>Release
 </code></pre></div></div>
 
-<p>其中get_scan_data()函数，就是测试代码内容，得到数据后将数据发送到publish_scan()函数中，就可以发布传感器数据了。</p>
+<p><br /></p>
 
-<h3 id="测试">测试</h3>
-
-<p>代码完成后，按照格式进行编写CMakeList、package文件，运行catkin_make就可以得到名为cht10_node.so动态库，运行launch文件即可加载，命令如下：</p>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>roslaunch cht10_node standalone.launch 
-</code></pre></div></div>
-<p>如果一切成才，运行rostopic list 可以得到/range话题。</p>
-
-<p>使用rostopic echo /range就可以得到传感器的ROS消息内容，包括传感器距离。</p>
-
-<p>或者直接运行</p>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>roslaunch cht10_node view_range.launch
-</code></pre></div></div>
-<p>就可以看到图形化形式为传感器数据。</p>
+<ul>
+  <li>如果你想从包运行单个特定的测试:
+    <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ament test --only-packages YOUR_PKG_NAME --ctest-args -R YOUR_TEST_IN_PKG
+</code></pre></div>    </div>
+  </li>
+</ul>
 
 
 
@@ -549,19 +431,12 @@
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="/2017/11/25/ros-arduino-bridge-usage/" data-toggle="tooltip" data-placement="top" title="ros_arduino_bridge使用总结">
+                        <a href="/2018/05/14/install-ros2/" data-toggle="tooltip" data-placement="top" title="【ROS翻译】Ubuntu下安装ROS2">
                         Previous<br>
-                        <span>ros_arduino_bridge使用总结</span>
+                        <span>【ROS翻译】Ubuntu下安装ROS2</span>
                         </a>
                     </li>
                     
-                    
-                    <li class="next">
-                        <a href="/2018/04/22/releaseros1-into-rosdistro/" data-toggle="tooltip" data-placement="top" title="【ROS总结】发布ROS1包到ROS版本">
-                        Next<br>
-                        <span>【ROS总结】发布ROS1包到ROS版本</span>
-                        </a>
-                    </li>
                     
                 </ul>
 
@@ -705,8 +580,8 @@
 <script type="text/javascript">
     /* * * CONFIGURATION VARIABLES * * */
     var disqus_shortname = "playfish";
-    var disqus_identifier = "/2017/11/25/write-laserscan-publisher";
-    var disqus_url = "http://localhost:4000/2017/11/25/write-laserscan-publisher/";
+    var disqus_identifier = "/2018/05/17/ament-tutorial";
+    var disqus_url = "http://localhost:4000/2018/05/17/ament-tutorial/";
 
     (function() {
         var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
