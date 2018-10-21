@@ -96,7 +96,7 @@ sudo dpkg -i ~/catkin_ws/src/test_msgs/ros-kinetic-test-msgs_0.0.0-0xenial_amd64
 test-msgs:
   ubuntu: [ros-kinetic-test-msgs]
 ```
-![](/img/in-post/generate-ros1-debian-package/test-msgs-debian.png)
+![](/img/in-post/generate-ros1-debian-package/test-msgs-rosdep.png)
 注意： 该格式要求比较严格，应按照以上格式来。
 
 编写完成后，将该文件连接到rosdep索引中，即在```/etc/ros/rosdep/sources.list.d/```目录下添加一个名为``` 50-my-default.list ```文件，文件内容如下：
@@ -104,13 +104,12 @@ test-msgs:
 yaml file:///home/ubuntu/.ros/rosdep.yaml
 ```
 其中，file指向的是以上编写的rosdep.yaml路径，ubuntu为用户名，替换成你自己的。
-![](/img/in-post/generate-ros1-debian-package/etc-rosdep.png)
 
 完成后，更新索引，将自定义消息加载到ros软件列表：
 ```
 rosdep update
 ```
-
+![](/img/in-post/generate-ros1-debian-package/etc-rosdep.png)
 ## 生成test_node安装包
 
 上几步已经将自定义的消息安装到ROS环境中，并向ROS软件列表添加该包的索引，如果没有进行以上操作，在运行以下步骤中，将会得到索引不到test_msgs包的位置，进而无法生成安装包。
