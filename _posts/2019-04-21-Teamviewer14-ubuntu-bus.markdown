@@ -31,12 +31,12 @@ ID:                 0
 Loglevel:           Info (100)
 License:            0
 Server:             master11.teamviewer.com
-IC:                 1530008483
+IC:                 xxxxxxxxxxxxx
 CPU:                Intel(R) Core(TM) i7-3610QM CPU @ 2.30GHz
 CPU extensions:     e9
 OS:                 Lx Ubuntu 16.04.6 LT (x86_64)
 IP:                 192.168.1.4,192.168.1.8
-MID:                1530008483_333db6192_ed3a3d023e2b5b92
+MID:                xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 MIDv:               0
 Proxy-Settings:     Type=0 IP= User=
 ```
