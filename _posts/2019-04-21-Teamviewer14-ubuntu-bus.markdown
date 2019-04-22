@@ -42,7 +42,7 @@ Proxy-Settings:     Type=0 IP= User=
 ```
 
 其中```192.168.1.4```为当前受限IP。
-## 修改Mac
+## 有线修改Mac
 
 一般TV根据Mac地址锁定TV  ID号，因此，确定IP为哪个网卡来修改该网卡的Mac地址，使用ifconfig查找当前受限网卡，如：
 ```
@@ -69,6 +69,16 @@ sudo ifconfig enp0s25 hw ether XX:XX:XX:XX:XX:XX ##(需要更改的MAC地址)
 
 sudo ifconfig enp0s25 up ###（启用网卡）
 ```
+
+## 无线修改Mac
+
+如果当前受限只有无线，而没有有线的话，采取如下措施，选择系统配置->编辑连接->选择受限Wifi名称->编辑。
+
+![](/img/in-post/ubuntu-teamviewer14/wireless_mac.png)
+
+在Cloned MAC address部分加上新Mac地址，如在原Mac上加1操作。
+保存退出。
+
 ## 初始化TV
 
 修改Mac后，需要删除原TV信息，删除位置共两处，运行：
